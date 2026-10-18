@@ -7,5 +7,5 @@
   "game_input": "Settings overlay consumes guest controller input while open",
   "ps5_build": "passed",
   "console_readback": "passed",
-  "user_test": "pending"
+  "user_test": "passed: user confirmed navigation works on PS5"
 }

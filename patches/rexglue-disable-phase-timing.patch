@@ -1,0 +1,193 @@
+--- a/src/graphics/vulkan/command_processor.cpp
++++ b/src/graphics/vulkan/command_processor.cpp
+@@ -75,6 +75,13 @@
+ 
+ namespace {
+ 
++// Disable per-draw host timing for release-mode performance comparisons.
++// Re-enable by compiling with -DWOS_ENABLE_PHASE_TIMING=1.
++#ifndef WOS_ENABLE_PHASE_TIMING
++#define WOS_ENABLE_PHASE_TIMING 0
++#endif
++
++#if WOS_ENABLE_PHASE_TIMING
+ // Local Web of Shadows diagnostic patch. Host wall times only, no GPU waits
+ // added. Draw phases are mutually exclusive; playback and fence timings may
+ // overlap the calling draw/swap phase and must not be added to those totals.
+@@ -120,6 +127,7 @@
+     p.last_report = now;
+   }
+ };
++#endif  // WOS_ENABLE_PHASE_TIMING
+ 
+ // glslang default built-in resource limits.
+ constexpr TBuiltInResource kGlslangDefaultTBuiltInResource = {
+@@ -2319,7 +2327,9 @@
+ 
+ void VulkanCommandProcessor::IssueSwap(uint32_t frontbuffer_ptr, uint32_t frontbuffer_width,
+                                        uint32_t frontbuffer_height) {
++#if WOS_ENABLE_PHASE_TIMING
+   WosSwapReport wos_report;
++#endif
+   SCOPE_profile_cpu_f("gpu");
+   vertex_buffers_in_sync_[0] = 0;
+   vertex_buffers_in_sync_[1] = 0;
+@@ -3674,7 +3684,9 @@
+     return IssueCopy();
+   }
+ 
++#if WOS_ENABLE_PHASE_TIMING
+   WosDrawScope wos_draw;
++#endif
+ 
+   bool surface_pitch_is_zero = regs.Get<reg::RB_SURFACE_INFO>().surface_pitch == 0;
+ 
+@@ -3763,12 +3775,18 @@
+   // before the awaiting may be referencing objects destroyed by
+   // CompletedSubmissionUpdated.
+   for (uint32_t i = 0; i < 2; ++i) {
++    #if WOS_ENABLE_PHASE_TIMING
+     wos_draw.Next(1);
++    #endif
+     if (!BeginSubmission(true)) {
+       return draw_fail("begin_submission");
+     }
+ 
++    #if WOS_ENABLE_PHASE_TIMING
++
+     wos_draw.Next(2);
++
++    #endif
+     // Process primitives.
+     if (!primitive_processor_->Process(primitive_processing_result)) {
+       return draw_fail("primitive_processing");
+@@ -3799,7 +3817,11 @@
+       return false;
+     }
+ 
++    #if WOS_ENABLE_PHASE_TIMING
++
+     wos_draw.Next(3);
++
++    #endif
+     // Shader modifications.
+     vertex_shader_modification = pipeline_cache_->GetCurrentVertexShaderModification(
+         *vertex_shader, primitive_processing_result.host_vertex_shader_type, interpolator_mask,
+@@ -3821,7 +3843,11 @@
+       return draw_fail("shader_translation");
+     }
+ 
++    #if WOS_ENABLE_PHASE_TIMING
++
+     wos_draw.Next(4);
++
++    #endif
+     // Obtain the samplers. Note that the bindings don't depend on the shader
+     // modification, so if on the second iteration of this loop it becomes
+     // different for some reason (like a race condition with the guest in index
+@@ -3889,7 +3915,11 @@
+     CheckSubmissionFenceAndDeviceLoss(sampler_overflow_await_submission);
+   }
+ 
++  #if WOS_ENABLE_PHASE_TIMING
++
+   wos_draw.Next(5);
++
++  #endif
+   uint32_t normalized_color_mask =
+       pixel_shader ? draw_util::GetNormalizedColorMask(regs, pixel_shader->writes_color_targets())
+                    : 0;
+@@ -3902,7 +3932,11 @@
+       (pixel_shader != nullptr ? pixel_shader->GetUsedTextureMaskAfterTranslation() : 0);
+   texture_cache_->RequestTextures(used_texture_mask);
+ 
++  #if WOS_ENABLE_PHASE_TIMING
++
+   wos_draw.Next(6);
++
++  #endif
+   const VulkanPipelineCache::PipelineLayoutProvider* pipeline_layout_provider;
+   // Set up the render targets - this may perform dispatches and draws.
+   if (!render_target_cache_->Update(is_rasterization_done, normalized_depth_control,
+@@ -3910,7 +3944,11 @@
+     return draw_fail("render_target_update");
+   }
+ 
++  #if WOS_ENABLE_PHASE_TIMING
++
+   wos_draw.Next(7);
++
++  #endif
+   // Create the pipeline (for this, need the render pass from the render target
+   // cache), translating the shaders - doing this now to obtain the used
+   // textures.
+@@ -3935,7 +3973,9 @@
+   if (pipeline == VK_NULL_HANDLE || pipeline_layout_provider == nullptr) {
+     return draw_fail("pipeline_lookup");
+   }
++  #if WOS_ENABLE_PHASE_TIMING
+   wos_draw.Next(8);
++  #endif
+   if (current_guest_graphics_pipeline_ != pipeline) {
+     deferred_command_buffer_.CmdVkBindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+     current_guest_graphics_pipeline_ = pipeline;
+@@ -4045,7 +4085,11 @@
+     return draw_fail("update_bindings");
+   }
+ 
++  #if WOS_ENABLE_PHASE_TIMING
++
+   wos_draw.Next(9);
++
++  #endif
+   // Ensure vertex buffers are resident.
+   const Shader::ConstantRegisterMap& constant_map_vertex = vertex_shader->constant_register_map();
+   for (uint32_t i = 0; i < rex::countof(constant_map_vertex.vertex_fetch_bitmap); ++i) {
+@@ -4159,7 +4203,11 @@
+     }
+   }
+ 
++  #if WOS_ENABLE_PHASE_TIMING
++
+   wos_draw.Next(10);
++
++  #endif
+   // Insert the shared memory barrier if needed.
+   // TODO(Triang3l): Find some PM4 command that can be used for indication of
+   // when memexports should be awaited instead of inserting the barrier in Use
+@@ -5040,11 +5088,15 @@
+     // defined by vkQueueSubmit additionally include in the first
+     // synchronization scope all commands that occur earlier in submission
+     // order."
++#if WOS_ENABLE_PHASE_TIMING
+     const auto wos_fence_start = WosNow();
++#endif
+     VkResult wait_result =
+         dfn.vkWaitForFences(device, uint32_t(await_submission - submission_completed_),
+                             submissions_in_flight_fences_.data(), VK_TRUE, UINT64_MAX);
++#if WOS_ENABLE_PHASE_TIMING
+     wos_phases.fence_wait += WosNow() - wos_fence_start;
++#endif
+     if (wait_result == VK_SUCCESS) {
+       fences_awaited += await_submission - submission_completed_;
+     } else {
+@@ -5458,7 +5510,9 @@
+       return false;
+     }
+     {
++#if WOS_ENABLE_PHASE_TIMING
+       WosCallScope wos_playback{wos_phases.playback};
++#endif
+       deferred_command_buffer_.Execute(command_buffer.buffer);
+     }
+     if (dfn.vkEndCommandBuffer(command_buffer.buffer) != VK_SUCCESS) {
+@@ -5492,7 +5546,9 @@
+     {
+       ui::vulkan::VulkanDevice::Queue::Acquisition queue_acquisition =
+           vulkan_device->AcquireQueue(vulkan_device->queue_family_graphics_compute(), 0);
++#if WOS_ENABLE_PHASE_TIMING
+       WosCallScope wos_submit{wos_phases.submit};
++#endif
+       submit_result = dfn.vkQueueSubmit(queue_acquisition.queue(), 1, &submit_info, fence);
+     }
+     if (submit_result != VK_SUCCESS) {

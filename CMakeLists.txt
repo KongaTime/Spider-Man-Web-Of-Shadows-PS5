@@ -72,7 +72,10 @@ add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/eboot.elf"
     "${PS5_VULKAN_DIR}" "${PS5_PAYLOAD_SDK}" "${runtime_dir}" ${objects}
   DEPENDS wos_guest wos_app wos_platform ${objects} ${runtime_archives}
     tools/link-title.sh tools/wos-pie.ld tools/stage-notices.py tools/release_licenses.py
-    tools/check-load-segments.py
+    tools/check-load-segments.py tools/runtime_patches.py
+    patches/rexglue-frame-diagnostics.patch patches/rexglue-disable-phase-timing.patch
+    patches/rexglue-single-range.patch patches/rexglue-valid-page-fast-path.patch
+    patches/rexglue-ps5-settings-navigation.patch
     dependencies.lock.json LICENSE sce_sys/param.json sce_sys/icon0.png
   COMMAND_EXPAND_LISTS VERBATIM)
 add_custom_target(title DEPENDS "${CMAKE_BINARY_DIR}/eboot.elf")

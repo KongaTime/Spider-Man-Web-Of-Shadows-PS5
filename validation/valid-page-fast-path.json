@@ -1,0 +1,40 @@
+{
+  "status": "host-tests-and-native-build-passed-console-test-pending",
+  "reference": {
+    "repository": "KongaTime/TheSimpsonsGame-PS5-Builder",
+    "file": "tools/rexglue-sdk/src/graphics/shared_memory.cpp",
+    "blob_sha": "2b8b74ca7e9a6b2d55736e725f7e669be3789f7e"
+  },
+  "patch": "patches/rexglue-valid-page-fast-path.patch",
+  "patch_sha256": "ffb8c916233daa54e913b978a017142a35c422527d28d1d74554547e5ae46386",
+  "host": {
+    "differential_cases": 12000,
+    "sanitizers": [
+      "address",
+      "undefined behavior"
+    ],
+    "invalidation_revalidation_cycles": 1000,
+    "resident_requests": 10000,
+    "original_lock_acquisitions": 10000,
+    "patched_lock_acquisitions": 0,
+    "original_temporary_allocations": 10000,
+    "patched_temporary_allocations": 0,
+    "concurrent_atomic_publication_check": "passed; not a ThreadSanitizer test",
+    "limits": "Allocation/upload callbacks and mutex adapter are host substitutes. No FPS claim."
+  },
+  "native": {
+    "runtime_compile": "passed",
+    "title_link": "passed",
+    "load_segment_check": "five valid nonoverlapping load segments",
+    "self_integrity": "valid",
+    "eboot_bytes": 102674765,
+    "eboot_sha256": "13081d9ef27956b0db17eae94046b0019089231e76bfa48fea9301a1be5bcd0f",
+    "diagnostics": "Per-draw timing guards retained, off by default; guest-swap timing retained"
+  },
+  "console": {
+    "deployed_this_candidate": false,
+    "picture_test": "pending",
+    "speed_comparison": "pending"
+  },
+  "source_patch_chain_check": "passed: replayed pinned source patches match current SDK files"
+}

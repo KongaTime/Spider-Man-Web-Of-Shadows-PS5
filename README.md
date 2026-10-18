@@ -41,16 +41,18 @@ Guest vsync stays enabled because disabling it accelerated menus without a usefu
 gameplay improvement. Native timing uses a kernel-anchored invariant CPU counter;
 its elapsed-time conversion has been checked against the console clock.
 
-The diagnostic build uses O3 and ThinLTO for generated native game code. Runtime
+The build uses O3 and ThinLTO for generated native game code. Runtime
 logs in `/app0/logs/wos_recomp_*.log` include two-second windows of guest swaps
 per second, frame-time percentiles, graphics-thread and frame-producing thread
-CPU time, and draw preparation phases. These are host measurements; GPU
+CPU time, and (when diagnostics are enabled) draw preparation phases. These are host measurements; GPU
 execution time is not measured directly. Nested command playback and fence wait
 times overlap their calling phases and must not be added to them.
 
 Before rebuilding this diagnostic runtime from the pinned ReXGlue checkout,
-apply `patches/rexglue-frame-diagnostics.patch` and
-`patches/rexglue-single-range.patch` using `git apply`, then rebuild
+apply `patches/rexglue-frame-diagnostics.patch`, followed by
+`patches/rexglue-disable-phase-timing.patch` for the current timing-disabled
+comparison build. Apply `patches/rexglue-single-range.patch`, then
+`patches/rexglue-valid-page-fast-path.patch`, and rebuild
 the runtime's `rexgpu-xenos` target. The title notice staging step verifies that
 the patch is applied and includes it with the dependency provenance. The patch
 for diagnostics adds timing only and leaves the original command stream and waits intact.
@@ -58,17 +60,28 @@ The single-range patch removes temporary list allocation and merging from
 individual buffer residency requests, retaining the original shared page
 checks and upload path. Its result and requested uploads matched the original
 routine in 12,000 differential host cases under address/undefined-behavior
-sanitizers. Gameplay performance comparison is pending.
+sanitizers. The user reported no noticeable gameplay improvement from allocation removal alone.
 The host harness is `tools/test-single-range.py`; run it under Linux/WSL with
 the patched SDK path and `--work-dir` pointing to a scratch directory. It
 compares the actual modified methods with their versions from the SDK's HEAD.
+
+The PS5 valid-page patch adapts the atomic bitmap approach from
+[TheSimpsonsGame-PS5-Builder](https://github.com/KongaTime/TheSimpsonsGame-PS5-Builder/blob/main/tools/rexglue-sdk/src/graphics/shared_memory.cpp).
+Already-resident buffer requests can return without acquiring the global memory
+lock. All runtime validity-word reads and writes use compiler atomics on PS5;
+invalid pages retain the existing locked upload path. This passed 12,000
+differential cases, 1,000 invalidation/revalidation cycles and an atomic
+publication stress check under host address/undefined-behavior sanitizers.
+In the harness, 10,000 resident requests took zero global locks. Console speed
+and picture correctness have not yet been tested for this change. See
+`validation/repository-performance-review.md` for the log review and limitations.
 
 PS5 settings open and close with **L1 + R1 + Options**. The touchpad is mapped
 to the original game's Back button. Apply
 `patches/rexglue-ps5-settings-navigation.patch` when rebuilding the runtime UI:
 it feeds physical controller navigation into ImGui and blocks guest controller
 input while the settings overlay is open. Navigate with the D-pad and select
-with Cross. The original Windows launcher's FSR and frame-generation controls
+with Cross; controller navigation has been confirmed on PS5. The original Windows launcher's FSR and frame-generation controls
 are not implemented in this PS5 Vulkan integration.
 
 The single-range change passed correctness checks but the user reported no

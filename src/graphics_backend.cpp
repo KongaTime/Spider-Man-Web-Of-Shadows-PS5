@@ -10,6 +10,7 @@
 
 namespace wos {
 namespace {
+#if WOS_PERF_DIAGNOSTICS
 struct Clock {
   static uint64_t now() { return rex::chrono::Clock::QueryHostTickCount(); }
 };
@@ -138,9 +139,14 @@ class MeasuredGraphicsSystem final
     return std::make_unique<MeasuredCommandProcessor>(this, kernel_state_);
   }
 };
+#endif  // WOS_PERF_DIAGNOSTICS
 }  // namespace
 
 std::unique_ptr<rex::graphics::GraphicsSystem> CreateGraphicsSystem() {
+#if WOS_PERF_DIAGNOSTICS
   return std::make_unique<MeasuredGraphicsSystem>();
+#else
+  return std::make_unique<rex::graphics::vulkan::VulkanGraphicsSystem>();
+#endif
 }
 }  // namespace wos

@@ -1,0 +1,124 @@
+diff --git a/src/graphics/shared_memory.cpp b/src/graphics/shared_memory.cpp
+--- a/src/graphics/shared_memory.cpp
++++ b/src/graphics/shared_memory.cpp
+@@ -23,6 +23,29 @@
+ 
+ namespace rex::graphics {
+ 
++namespace {
++// RequestRanges can read the PS5 validity bitmap without the global lock.
++// Its storage is fixed between initialization and command-processor shutdown;
++// all published-word accesses must be atomic, including serialized writers.
++uint64_t LoadValidFlags(uint64_t& flags) {
++#if REX_PLATFORM_PS5
++  static_assert(__atomic_always_lock_free(sizeof(uint64_t), nullptr));
++  static_assert(alignof(uint64_t) >= sizeof(uint64_t));
++  return __atomic_load_n(&flags, __ATOMIC_ACQUIRE);
++#else
++  return flags;
++#endif
++}
++
++void StoreValidFlags(uint64_t& flags, uint64_t value) {
++#if REX_PLATFORM_PS5
++  __atomic_store_n(&flags, value, __ATOMIC_RELEASE);
++#else
++  flags = value;
++#endif
++}
++}  // namespace
++
+ SharedMemory::SharedMemory(memory::Memory& memory) : memory_(memory) {
+   page_size_log2_ = rex::log2_ceil(uint32_t(rex::memory::page_size()));
+ }
+@@ -93,7 +116,9 @@
+ void SharedMemory::InvalidateAllPages() {
+   auto global_lock = global_critical_region_.Acquire();
+ 
+-  std::fill(system_page_flags_valid_.begin(), system_page_flags_valid_.end(), uint64_t(0));
++  for (uint64_t& flags : system_page_flags_valid_) {
++    StoreValidFlags(flags, 0);
++  }
+   std::fill(system_page_flags_valid_and_gpu_written_.begin(),
+             system_page_flags_valid_and_gpu_written_.end(), uint64_t(0));
+ }
+@@ -103,7 +128,9 @@
+ 
+   // Pages that are valid only because the CPU uploaded them lose their valid
+   // bit here, so the next frame re-reads them from guest memory.
+-  system_page_flags_valid_ = system_page_flags_valid_and_gpu_written_;
++  for (uint32_t i = 0; i < num_system_page_flags_; ++i) {
++    StoreValidFlags(system_page_flags_valid_[i], system_page_flags_valid_and_gpu_written_[i]);
++  }
+ }
+ 
+ void SharedMemory::ClearCache() {
+@@ -303,7 +330,8 @@
+       if (i == valid_block_last && (valid_page_last & 63) != 63) {
+         valid_bits &= (uint64_t(1) << ((valid_page_last & 63) + 1)) - 1;
+       }
+-      system_page_flags_valid_[i] |= valid_bits;
++      StoreValidFlags(system_page_flags_valid_[i],
++                      LoadValidFlags(system_page_flags_valid_[i]) | valid_bits);
+       uint64_t& gpu_written = system_page_flags_valid_and_gpu_written_[i];
+       gpu_written = written_by_gpu ? (gpu_written | valid_bits) : (gpu_written & ~valid_bits);
+     }
+@@ -408,6 +436,39 @@
+     }
+   }
+ 
++#if REX_PLATFORM_PS5
++  // Most buffer requests reuse resident pages. Avoid entering the global
++  // memory critical region in that case. Any invalid page falls through to
++  // the original locked upload path. As with that path, the guest must still
++  // synchronize its writes with GPU use of the requested data.
++  bool all_valid = true;
++  for (const auto& range : merged_ranges) {
++    const uint32_t page_first = range.first >> page_size_log2_;
++    const uint32_t page_last = (range.first + range.second - 1) >> page_size_log2_;
++    const uint32_t block_first = page_first >> 6;
++    const uint32_t block_last = page_last >> 6;
++    for (uint32_t i = block_first; i <= block_last; ++i) {
++      uint64_t valid = LoadValidFlags(system_page_flags_valid_[i]);
++      if (i == block_first) {
++        valid |= (uint64_t(1) << (page_first & 63)) - 1;
++      }
++      if (i == block_last && (page_last & 63) != 63) {
++        valid |= ~((uint64_t(1) << ((page_last & 63) + 1)) - 1);
++      }
++      if (valid != UINT64_MAX) {
++        all_valid = false;
++        break;
++      }
++    }
++    if (!all_valid) {
++      break;
++    }
++  }
++  if (all_valid) {
++    return true;
++  }
++#endif
++
+   upload_ranges_.clear();
+   auto append_upload_range = [this](uint32_t page_start, uint32_t page_count) {
+     if (!page_count) {
+@@ -431,7 +492,7 @@
+       uint32_t block_last = page_last >> 6;
+       uint32_t range_start = UINT32_MAX;
+       for (uint32_t i = block_first; i <= block_last; ++i) {
+-        uint64_t block_valid = system_page_flags_valid_[i];
++        uint64_t block_valid = LoadValidFlags(system_page_flags_valid_[i]);
+         // Consider pages in the block outside the requested range valid.
+         if (i == block_first) {
+           uint64_t block_before = (uint64_t(1) << (page_first & 63)) - 1;
+@@ -543,7 +604,8 @@
+     if (i == block_last && (page_last & 63) != 63) {
+       invalidate_bits &= (uint64_t(1) << ((page_last & 63) + 1)) - 1;
+     }
+-    system_page_flags_valid_[i] &= ~invalidate_bits;
++    StoreValidFlags(system_page_flags_valid_[i],
++                    LoadValidFlags(system_page_flags_valid_[i]) & ~invalidate_bits);
+     system_page_flags_valid_and_gpu_written_[i] &= ~invalidate_bits;
+   }
+ 

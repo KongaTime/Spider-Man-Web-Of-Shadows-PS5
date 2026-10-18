@@ -92,7 +92,9 @@
     "game_input": "Settings overlay consumes guest controller input while open",
     "ps5_build": "passed",
     "console_readback": "passed",
-    "user_test": "pending"
+    "user_test": "passed: user confirmed navigation works on PS5"
   },
-  "scheduling_diagnostics": "Command processor wait intervals and whole-process CPU time added; captures pending"
+  "scheduling_diagnostics": "Command processor wait intervals and whole-process CPU time added; captures pending",
+  "artifacts_scope": "Previously deployed settings-navigation build; see valid-page-fast-path.json for current local candidate",
+  "latest_local_candidate": "valid-page-fast-path.json; console test pending"
 }

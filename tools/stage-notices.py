@@ -6,6 +6,7 @@ import re
 import shutil
 import sys
 from release_licenses import copy_notices, dependency_part, source_info
+from runtime_patches import verified_runtime_patches
 
 root = pathlib.Path(__file__).resolve().parent.parent
 app, dependencies, archive, rex_source, sdk = map(pathlib.Path, sys.argv[1:6])
@@ -20,16 +21,13 @@ for ident, checkout, label in [
                            'See the accompanying component license texts', [], output)
     if ident == 'rexglue':
         import hashlib
-        import subprocess
         part['source']['local_patches'] = []
-        for name in ('rexglue-frame-diagnostics.patch', 'rexglue-single-range.patch',
-                     'rexglue-ps5-settings-navigation.patch'):
-            patch = root / 'patches' / name
-            subprocess.run(['git', '-C', str(checkout), 'apply', '--reverse',
-                            '--check', str(patch)], check=True, capture_output=True)
-            shutil.copyfile(patch, output / name)
+        # Replay overlapping patches from HEAD and compare the resulting source.
+        # Reverse-checking each patch independently cannot verify such chains.
+        for patch in verified_runtime_patches(checkout, root / 'patches'):
+            shutil.copyfile(patch, output / patch.name)
             part['source']['local_patches'].append(dict(
-                file='licenses/' + name,
+                file='licenses/' + patch.name,
                 sha256=hashlib.sha256(patch.read_bytes()).hexdigest()))
     parts.append(part)
 
