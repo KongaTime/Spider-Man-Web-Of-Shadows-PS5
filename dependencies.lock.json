@@ -30,7 +30,17 @@
     "name": "rexglue-sdk",
     "source": "https://github.com/KongaTime/rexglue-sdk.git",
     "commit": "f47ccdde34b3a992f7872a27619fc588040c229f",
-    "local_patches": ["patches/rexglue-single-range.patch", "patches/rexglue-valid-page-fast-path.patch", "patches/rexglue-ps5-settings-navigation.patch", "patches/rexglue-frame-diagnostics.patch", "patches/rexglue-disable-phase-timing.patch"],
+    "local_patches": [
+      "patches/rexglue-single-range.patch",
+      "patches/rexglue-valid-page-fast-path.patch",
+      "patches/rexglue-ps5-settings-navigation.patch",
+      "patches/rexglue-frame-diagnostics.patch",
+      "patches/rexglue-disable-phase-timing.patch",
+      "patches/rexglue-coarse-frame-costs.patch",
+      "patches/rexglue-texture-descriptor-reuse.patch",
+      "patches/rexglue-command-wait-breakdown.patch",
+      "patches/rexglue-command-ring-wait.patch"
+    ],
     "valid_page_fast_path_reference": {
       "source": "https://github.com/KongaTime/TheSimpsonsGame-PS5-Builder/blob/main/tools/rexglue-sdk/src/graphics/shared_memory.cpp",
       "blob_sha": "2b8b74ca7e9a6b2d55736e725f7e669be3789f7e"

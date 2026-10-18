@@ -12,5 +12,8 @@ cmake -S "$root" -B "$build" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE
     -DCMAKE_TOOLCHAIN_FILE="$sdk/toolchain/prospero.cmake" \
     -DPS5_PAYLOAD_SDK="$sdk" -DPS5_VULKAN_DIR="${PS5_VULKAN_DIR:-$deps/PS5_Vulkan}" \
     -DREXGLUE_SRC="${REXGLUE_SRC:-$deps/rexglue-sdk}" \
-    -DREXGLUE_PS5_BUILD="$runtime_build" -DWOS_GENERATED_DIR="$generated"
+    -DREXGLUE_PS5_BUILD="$runtime_build" -DWOS_GENERATED_DIR="$generated" \
+    -DWOS_FRAME_COST_DIAGNOSTICS="${WOS_FRAME_COST_DIAGNOSTICS:-OFF}" \
+    -DWOS_REUSE_TEXTURE_BINDINGS="${WOS_REUSE_TEXTURE_BINDINGS:-OFF}" \
+    -DWOS_COMMAND_RING_SPIN_LIMIT="${WOS_COMMAND_RING_SPIN_LIMIT:-500}"
 cmake --build "$build" --parallel "${BUILD_JOBS:-2}" --target "${1:-title}"

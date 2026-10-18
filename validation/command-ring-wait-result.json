@@ -1,0 +1,48 @@
+{
+  "status": "console-correct-behavior-no-material-fps-gain",
+  "target_more_than_60_game_frames_per_second": "not achieved",
+  "experiment": {
+    "command_ring_spin_limit": 16,
+    "default_limit": 500,
+    "diagnostics_enabled": true,
+    "texture_descriptor_reuse_enabled": true
+  },
+  "native": {
+    "runtime_compile": "passed",
+    "title_link": "passed",
+    "self_integrity": "valid",
+    "load_segments": "five valid nonoverlapping load segments",
+    "signed_eboot_bytes": 102716845,
+    "signed_eboot_sha256": "e9ebdbaa6ad39c089b93e29291dc707dad3ac5007275af2b5b73183e09f3cc3c",
+    "executable_readback": "passed: canonical extracted ELF with non-loadable version trailer omitted"
+  },
+  "host_tests": "ASan/UBSan extracted worker: limits 0, 16, 500; 6003 pointer updates, 600 callbacks, pre-signaled events and shutdown",
+  "console": {
+    "runtime_log": "wos_recomp_033.log",
+    "user_report": "Behaves correctly; about the same speed",
+    "representative_tail": "15.7-15.8 swaps/s, about 63.4-63.6 ms/frame",
+    "ring_empty_cpu_ms_per_frame": "about 3.6-4.2; previous build about 6.1-6.5",
+    "ring_empty_wall_ms_per_frame": "about 29-34",
+    "tail_diagnostics": [
+      "WOS guest perf: 16.06 swaps/s, 62.27 ms/frame, calling-thread CPU 14.96 ms, VdSwap 0.00 ms",
+      "WOS coarse perf: 16.01 swaps/s, 62.45 ms/frame, graphics-thread CPU 32.79 ms/frame, draws 6960.7, query ends 0.0, queue submits 3.2",
+      "WOS coarse nested ms/frame: draw 21.65, primitives 0.68, bindings 7.28, residency 0.90, query-end 0.00, fence-wait 0.00, playback 1.98, queue-submit 0.24",
+      "WOS texture descriptors/frame: reused 4841.2, written 1309.3",
+      "WOS extra nested ms/frame: swap 1.21, copy 2.78, fence-check-and-reclaim 0.02",
+      "WOS command waits ms/frame: ring-empty 30.26 (CPU 3.65), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.2, packets 98.2, sleeps 0.0, coherency 76.2",
+      "WOS guest perf: 15.72 swaps/s, 63.59 ms/frame, calling-thread CPU 15.51 ms, VdSwap 0.00 ms",
+      "WOS coarse perf: 15.75 swaps/s, 63.50 ms/frame, graphics-thread CPU 34.20 ms/frame, draws 7161.6, query ends 0.0, queue submits 3.4",
+      "WOS coarse nested ms/frame: draw 22.69, primitives 0.73, bindings 7.56, residency 0.95, query-end 0.00, fence-wait 0.00, playback 2.08, queue-submit 0.53",
+      "WOS texture descriptors/frame: reused 4858.8, written 1459.6",
+      "WOS extra nested ms/frame: swap 1.22, copy 3.22, fence-check-and-reclaim 0.02",
+      "WOS command waits ms/frame: ring-empty 29.03 (CPU 3.60), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.3, packets 99.1, sleeps 0.0, coherency 77.1",
+      "WOS guest perf: 15.76 swaps/s, 63.45 ms/frame, calling-thread CPU 14.70 ms, VdSwap 0.00 ms",
+      "WOS coarse perf: 15.78 swaps/s, 63.39 ms/frame, graphics-thread CPU 30.50 ms/frame, draws 5834.3, query ends 0.0, queue submits 3.3",
+      "WOS coarse nested ms/frame: draw 19.15, primitives 0.62, bindings 6.58, residency 0.96, query-end 0.00, fence-wait 0.00, playback 1.91, queue-submit 0.38",
+      "WOS texture descriptors/frame: reused 3684.7, written 1287.0",
+      "WOS extra nested ms/frame: swap 1.34, copy 2.84, fence-check-and-reclaim 0.02",
+      "WOS command waits ms/frame: ring-empty 33.83 (CPU 4.17), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.3, packets 100.4, sleeps 0.0, coherency 78.4"
+    ]
+  },
+  "limits": "Different scene workloads and host instrumentation prevent a controlled speedup claim. Idle CPU savings did not establish higher gameplay FPS. Nested host intervals are not direct GPU timestamps."
+}

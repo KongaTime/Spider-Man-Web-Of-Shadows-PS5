@@ -92,6 +92,48 @@ looking at the floor versus 11–12 looking toward the world, with substantially
 more draw calls. A requested 854×480 video mode did not change the game's
 1280×720 render dimensions; the console setting has been restored to 1280×720.
 
+The target is now more than 60 game frames/second, which has not been achieved.
+Runtime 030 measured about 60–62 ms/frame and 37–38 ms/frame of graphics-thread
+CPU work in the street-facing opening scene. Host draw preparation took roughly
+23–24 ms/frame, including 8.5–8.9 ms in bindings; these nested values overlap.
+There were no completed host occlusion queries in this scene, ruling out their
+synchronous readback as the cause of this capture's slowdown.
+
+For the current experiment, apply `patches/rexglue-coarse-frame-costs.patch`
+after the timing-disable patch, then `patches/rexglue-texture-descriptor-reuse.patch`.
+Apply `patches/rexglue-command-wait-breakdown.patch` last for the current
+command-ring and register-wait measurements.
+The optional `patches/rexglue-command-ring-wait.patch` makes the spin budget
+tunable and wakes the worker for queued host callbacks. To reproduce the
+short-spin comparison, add `WOS_COMMAND_RING_SPIN_LIMIT=16` to the build
+environment; the default is the original 500. Its extracted worker passed
+host tests at limits 0, 16 and 500, including pointer updates, callbacks,
+signals arriving before waits and shutdown. The PS5 comparison reduced idle
+CPU use to roughly 3–4 ms/frame, but the user reported the same speed and the
+capture remained around 16 swaps/second. This is not an established FPS gain.
+Rebuild the runtime's `rexgpu-xenos` target, then build the title with
+`WOS_FRAME_COST_DIAGNOSTICS=ON WOS_REUSE_TEXTURE_BINDINGS=ON bash tools/build.sh title`.
+Both switches default to OFF. The new renderer cvars are `wos_frame_costs`
+and `wos_reuse_texture_bindings`. Descriptor reuse compares the actual Vulkan
+image views, samplers, layouts and counts, keeps the existing validity checks,
+and rebinds the current pipeline's sets. It avoids hash-only matching of guest
+fetch constants. The extracted decisions passed 20,000 host cases with
+streaming changes, cache/frame resets, owner changes, failures and toggling.
+These tests use mock Vulkan writes; console picture and timing checks are
+required. See `validation/high-frame-rate-work.md` for measured costs and limits.
+In runtime 031, the user confirmed correct graphics but similar speed. Roughly
+5,200–5,300 stage bindings were reused per heavy frame, while frame intervals
+remained around 62–64 ms. No material gameplay speedup was established.
+
+With diagnostics enabled, the title also measures imported kernel waits,
+thread delays and critical-section entries on the thread that calls VdSwap.
+The wrappers forward the original context and guest memory to the original
+implementation exactly once. Their host tests cover forwarding and report
+reset with diagnostics enabled and disabled. `tools/check-guest-wrappers.py`
+checks the unstripped linked ELF against the private generated import table
+to verify that game calls actually reach all seven wrappers. No generated
+game source is included in this repository.
+
 Deploy the complete title folder, including `sce_sys/icon0.png`, before
 publishing `sce_sys/param.json` to the loader. An initial missing icon can
 exhaust ShadowMountPlus's registration retries and require a fresh scan with

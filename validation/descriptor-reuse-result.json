@@ -1,0 +1,53 @@
+{
+  "status": "picture-correct-no-material-gameplay-speedup-established",
+  "user_report": "Picture correct; speed about the same",
+  "runtime_log": "wos_recomp_031.log",
+  "native": {
+    "runtime_compile": "passed",
+    "title_link": "passed",
+    "load_segments": "five valid nonoverlapping load segments",
+    "self_integrity": "valid",
+    "signed_eboot_sha256": "e5ad35a334ddbfa115c445f3b316297c163cb9fe3c4d2c1ea7550aa16a5e518b",
+    "readback": "passed"
+  },
+  "host_tests": {
+    "sanitizers": [
+      "address",
+      "undefined behavior"
+    ],
+    "cases": 20000,
+    "modeled_stage_reuses": 29353,
+    "modeled_stage_writes": 13156,
+    "limits": "Mock driver writes; extracted actual comparison/decision/publication code"
+  },
+  "console": {
+    "picture_correct": true,
+    "speed_improvement": "inconclusive / not noticed by user",
+    "settings_preserved": true,
+    "errors_or_critical_rows": 0,
+    "tail_diagnostics": [
+      "WOS coarse perf: 16.59 swaps/s, 60.26 ms/frame, graphics-thread CPU 33.38 ms/frame, draws 6545.7, query ends 0.0, queue submits 3.3",
+      "WOS coarse nested ms/frame: draw 20.15, primitives 0.67, bindings 6.70, residency 0.88, query-end 0.00, fence-wait 0.00, playback 1.66, queue-submit 0.60",
+      "WOS texture descriptors/frame: reused 4667.7, written 1177.7",
+      "WOS guest perf: 16.54 swaps/s, 60.46 ms/frame, calling-thread CPU 14.20 ms, VdSwap 0.00 ms",
+      "WOS coarse perf: 16.09 swaps/s, 62.14 ms/frame, graphics-thread CPU 37.48 ms/frame, draws 7521.7, query ends 0.0, queue submits 3.4",
+      "WOS coarse nested ms/frame: draw 23.37, primitives 0.72, bindings 7.88, residency 0.93, query-end 0.00, fence-wait 0.00, playback 1.97, queue-submit 0.69",
+      "WOS texture descriptors/frame: reused 5283.7, written 1408.5",
+      "WOS guest perf: 16.08 swaps/s, 62.20 ms/frame, calling-thread CPU 15.28 ms, VdSwap 0.00 ms",
+      "WOS coarse perf: 15.96 swaps/s, 62.67 ms/frame, graphics-thread CPU 36.50 ms/frame, draws 7249.3, query ends 0.0, queue submits 3.5",
+      "WOS coarse nested ms/frame: draw 22.46, primitives 0.68, bindings 7.54, residency 0.93, query-end 0.00, fence-wait 0.00, playback 1.84, queue-submit 0.57",
+      "WOS texture descriptors/frame: reused 5190.7, written 1280.1",
+      "WOS guest perf: 15.92 swaps/s, 62.81 ms/frame, calling-thread CPU 14.54 ms, VdSwap 0.00 ms",
+      "WOS coarse perf: 15.63 swaps/s, 63.99 ms/frame, graphics-thread CPU 37.34 ms/frame, draws 7408.5, query ends 0.0, queue submits 3.3",
+      "WOS coarse nested ms/frame: draw 22.93, primitives 0.65, bindings 7.78, residency 0.88, query-end 0.00, fence-wait 0.00, playback 1.91, queue-submit 0.18",
+      "WOS texture descriptors/frame: reused 5331.7, written 1259.9",
+      "WOS guest perf: 15.64 swaps/s, 63.95 ms/frame, calling-thread CPU 14.67 ms, VdSwap 0.00 ms"
+    ],
+    "observation": "Thousands of stage descriptor writes avoided per frame; bindings still cost about 7.5-7.9 ms in later heavy windows, and frame intervals remain about 62-64 ms.",
+    "limits": "Camera and workload differ. Host timings overlap and include instrumentation. No direct GPU timestamps."
+  },
+  "target": {
+    "game_frames_per_second": ">60",
+    "achieved": false
+  }
+}

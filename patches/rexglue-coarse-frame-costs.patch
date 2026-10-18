@@ -1,0 +1,180 @@
+diff --git a/src/graphics/vulkan/command_processor.cpp b/src/graphics/vulkan/command_processor.cpp
+--- a/src/graphics/vulkan/command_processor.cpp
++++ b/src/graphics/vulkan/command_processor.cpp
+@@ -18,6 +18,7 @@
+ #include <string>
+ #include <string_view>
+ #include <tuple>
++#include <time.h>
+ #include <utility>
+ #include <vector>
+ 
+@@ -71,9 +72,70 @@
+                     "device (falls back to render passes otherwise)")
+     .lifecycle(rex::cvar::Lifecycle::kHotReload);
+ 
++REXCVAR_DEFINE_BOOL(wos_frame_costs, false, "GPU/Diagnostics",
++                    "Log coarse host draw and synchronization costs every two seconds")
++    .lifecycle(rex::cvar::Lifecycle::kHotReload);
++
+ namespace rex::graphics::vulkan {
+ 
+ namespace {
++
++// Opt-in host measurements. Timed regions nest, so these totals must not be
++// added together. No GPU commands, synchronization or guest timing are changed.
++enum class WosCost { kDraw, kPrimitives, kBindings, kResidency, kQueryEnd,
++                     kFenceWait, kPlayback, kQueueSubmit, kCount };
++struct WosFrameCosts {
++  std::array<uint64_t, size_t(WosCost::kCount)> ns{}, calls{};
++  uint64_t last = 0, last_cpu = 0, frames = 0;
++};
++thread_local WosFrameCosts wos_costs;
++struct WosCostScope {
++  WosCost cost;
++  bool enabled = REXCVAR_GET(wos_frame_costs);
++  uint64_t start = 0;
++  explicit WosCostScope(WosCost value) : cost(value) {
++    if (enabled) start = rex::chrono::Clock::QueryHostTickCount();
++  }
++  void Stop() {
++    if (!enabled) return;
++    auto& state = wos_costs;
++    state.ns[size_t(cost)] += rex::chrono::Clock::QueryHostTickCount() - start;
++    ++state.calls[size_t(cost)];
++    enabled = false;
++  }
++  ~WosCostScope() { Stop(); }
++};
++struct WosCostReport {
++  ~WosCostReport() {
++    auto& state = wos_costs;
++    if (!REXCVAR_GET(wos_frame_costs)) { state = {}; return; }
++    const auto now = rex::chrono::Clock::QueryHostTickCount();
++    bool cpu_valid = false;
++    uint64_t cpu = 0;
++#if !REX_PLATFORM_WIN32
++    timespec time{};
++    cpu_valid = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time) == 0;
++    if (cpu_valid) cpu = uint64_t(time.tv_sec) * 1000000000ull + time.tv_nsec;
++#endif
++    if (!state.last) { state = {}; state.last = now; state.last_cpu = cpu; return; }
++    ++state.frames;
++    if (now - state.last < 2000000000ull) return;
++    const double frames = double(state.frames), scale = 1.0 / (1000000.0 * frames);
++    const auto ms = [&](WosCost cost) { return double(state.ns[size_t(cost)]) * scale; };
++    const auto calls = [&](WosCost cost) { return double(state.calls[size_t(cost)]) / frames; };
++    REXLOG_INFO("WOS coarse perf: {:.2f} swaps/s, {:.2f} ms/frame, graphics-thread CPU {:.2f} ms/frame, "
++                "draws {:.1f}, query ends {:.1f}, queue submits {:.1f}",
++                frames * 1e9 / double(now - state.last), double(now - state.last) * scale,
++                cpu_valid && state.last_cpu && cpu >= state.last_cpu ? double(cpu - state.last_cpu) * scale : -1.0,
++                calls(WosCost::kDraw), calls(WosCost::kQueryEnd), calls(WosCost::kQueueSubmit));
++    REXLOG_INFO("WOS coarse nested ms/frame: draw {:.2f}, primitives {:.2f}, bindings {:.2f}, "
++                "residency {:.2f}, query-end {:.2f}, fence-wait {:.2f}, playback {:.2f}, queue-submit {:.2f}",
++                ms(WosCost::kDraw), ms(WosCost::kPrimitives), ms(WosCost::kBindings),
++                ms(WosCost::kResidency), ms(WosCost::kQueryEnd), ms(WosCost::kFenceWait),
++                ms(WosCost::kPlayback), ms(WosCost::kQueueSubmit));
++    state = {}; state.last = now; state.last_cpu = cpu;
++  }
++};
+ 
+ // Disable per-draw host timing for release-mode performance comparisons.
+ // Re-enable by compiling with -DWOS_ENABLE_PHASE_TIMING=1.
+@@ -2327,6 +2389,7 @@
+ 
+ void VulkanCommandProcessor::IssueSwap(uint32_t frontbuffer_ptr, uint32_t frontbuffer_width,
+                                        uint32_t frontbuffer_height) {
++  WosCostReport wos_cost_report;
+ #if WOS_ENABLE_PHASE_TIMING
+   WosSwapReport wos_report;
+ #endif
+@@ -3687,6 +3750,7 @@
+ #if WOS_ENABLE_PHASE_TIMING
+   WosDrawScope wos_draw;
+ #endif
++  WosCostScope wos_draw_cost(WosCost::kDraw);
+ 
+   bool surface_pitch_is_zero = regs.Get<reg::RB_SURFACE_INFO>().surface_pitch == 0;
+ 
+@@ -3788,7 +3852,12 @@
+ 
+     #endif
+     // Process primitives.
+-    if (!primitive_processor_->Process(primitive_processing_result)) {
++    bool primitives_ok;
++    {
++      WosCostScope cost(WosCost::kPrimitives);
++      primitives_ok = primitive_processor_->Process(primitive_processing_result);
++    }
++    if (!primitives_ok) {
+       return draw_fail("primitive_processing");
+     }
+     if (!primitive_processing_result.host_draw_vertex_count) {
+@@ -4081,7 +4150,12 @@
+ 
+   // Update uniform buffers and descriptor sets after binding the pipeline with
+   // the new layout.
+-  if (!UpdateBindings(vertex_shader, pixel_shader)) {
++  bool bindings_ok;
++  {
++    WosCostScope cost(WosCost::kBindings);
++    bindings_ok = UpdateBindings(vertex_shader, pixel_shader);
++  }
++  if (!bindings_ok) {
+     return draw_fail("update_bindings");
+   }
+ 
+@@ -4091,6 +4165,7 @@
+ 
+   #endif
+   // Ensure vertex buffers are resident.
++  WosCostScope wos_residency_cost(WosCost::kResidency);
+   const Shader::ConstantRegisterMap& constant_map_vertex = vertex_shader->constant_register_map();
+   for (uint32_t i = 0; i < rex::countof(constant_map_vertex.vertex_fetch_bitmap); ++i) {
+     uint32_t vfetch_bits_remaining = constant_map_vertex.vertex_fetch_bitmap[i];
+@@ -4209,6 +4284,7 @@
+ 
+   #endif
+   // Insert the shared memory barrier if needed.
++  wos_residency_cost.Stop();
+   // TODO(Triang3l): Find some PM4 command that can be used for indication of
+   // when memexports should be awaited instead of inserting the barrier in Use
+   // every time if memory export was done in the previous draw?
+@@ -4985,6 +5061,7 @@
+     return false;
+   }
+ 
++  WosCostScope query_cost(WosCost::kQueryEnd);
+   uint32_t host_index = active_occlusion_query_.host_index;
+   active_occlusion_query_ = {};
+ 
+@@ -5092,8 +5169,11 @@
+     const auto wos_fence_start = WosNow();
+ #endif
+     VkResult wait_result =
+-        dfn.vkWaitForFences(device, uint32_t(await_submission - submission_completed_),
+-                            submissions_in_flight_fences_.data(), VK_TRUE, UINT64_MAX);
++        [&] {
++          WosCostScope cost(WosCost::kFenceWait);
++          return dfn.vkWaitForFences(device, uint32_t(await_submission - submission_completed_),
++                                    submissions_in_flight_fences_.data(), VK_TRUE, UINT64_MAX);
++        }();
+ #if WOS_ENABLE_PHASE_TIMING
+     wos_phases.fence_wait += WosNow() - wos_fence_start;
+ #endif
+@@ -5513,6 +5593,7 @@
+ #if WOS_ENABLE_PHASE_TIMING
+       WosCallScope wos_playback{wos_phases.playback};
+ #endif
++      WosCostScope playback_cost(WosCost::kPlayback);
+       deferred_command_buffer_.Execute(command_buffer.buffer);
+     }
+     if (dfn.vkEndCommandBuffer(command_buffer.buffer) != VK_SUCCESS) {
+@@ -5549,6 +5630,7 @@
+ #if WOS_ENABLE_PHASE_TIMING
+       WosCallScope wos_submit{wos_phases.submit};
+ #endif
++      WosCostScope submit_cost(WosCost::kQueueSubmit);
+       submit_result = dfn.vkQueueSubmit(queue_acquisition.queue(), 1, &submit_info, fence);
+     }
+     if (submit_result != VK_SUCCESS) {

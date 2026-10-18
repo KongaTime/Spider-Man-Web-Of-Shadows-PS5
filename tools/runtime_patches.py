@@ -11,7 +11,17 @@ def verified_runtime_patches(checkout, patch_dir):
             ['rexglue-single-range.patch', 'rexglue-valid-page-fast-path.patch']]),
         (['src/ui/imgui_drawer.cpp', 'src/ui/overlay/settings_overlay.cpp',
           'src/ui/rex_app.cpp'], [['rexglue-ps5-settings-navigation.patch']]),
-        (['src/graphics/vulkan/command_processor.cpp'], [
+        (['src/graphics/command_processor.cpp', 'src/graphics/vulkan/command_processor.cpp'], [
+            ['rexglue-frame-diagnostics.patch', 'rexglue-disable-phase-timing.patch',
+             'rexglue-coarse-frame-costs.patch', 'rexglue-texture-descriptor-reuse.patch',
+             'rexglue-command-wait-breakdown.patch', 'rexglue-command-ring-wait.patch'],
+            ['rexglue-frame-diagnostics.patch', 'rexglue-disable-phase-timing.patch',
+             'rexglue-coarse-frame-costs.patch', 'rexglue-texture-descriptor-reuse.patch',
+             'rexglue-command-wait-breakdown.patch'],
+            ['rexglue-frame-diagnostics.patch', 'rexglue-disable-phase-timing.patch',
+             'rexglue-coarse-frame-costs.patch', 'rexglue-texture-descriptor-reuse.patch'],
+            ['rexglue-frame-diagnostics.patch', 'rexglue-disable-phase-timing.patch',
+             'rexglue-coarse-frame-costs.patch'],
             ['rexglue-frame-diagnostics.patch', 'rexglue-disable-phase-timing.patch'],
             ['rexglue-frame-diagnostics.patch'], []]),
     ]

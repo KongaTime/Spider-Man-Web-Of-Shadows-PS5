@@ -40,7 +40,11 @@ done
 printf '};\n' >> "$build/link/wos-local.map"
 "$sdk/bin/prospero-lld" "${radv_linker_script[@]}" --eh-frame-hdr "${radv_link_flags[@]}" \
     --version-script "$native/app-symbols.map" --version-script "$build/link/wos-local.map" \
-    --exclude-libs=ALL --wrap=abort --wrap=__imp__VdSwap --lto-O3 --thinlto-jobs=2 \
+    --exclude-libs=ALL --wrap=abort --wrap=__imp__VdSwap \
+    --wrap=__imp__KeWaitForSingleObject --wrap=__imp__KeWaitForMultipleObjects \
+    --wrap=__imp__NtWaitForSingleObjectEx --wrap=__imp__NtWaitForMultipleObjectsEx \
+    --wrap=__imp__KeDelayExecutionThread --wrap=__imp__RtlEnterCriticalSection \
+    --lto-O3 --thinlto-jobs=2 \
     --thinlto-cache-dir="$build/link/thinlto-cache" \
     -e _start -o "$build/link/llvm-pie.elf" \
     "$build/link/obj/app_crt.o" "${objects[@]}" \
@@ -63,7 +67,7 @@ null_imports=$(comm -23 \
     --companion-sdk 0x08050001 --file-name eboot.elf
 python3 "$root/tools/check-load-segments.py" "$build/eboot.elf.new"
 title_id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["titleId"])' "$root/sce_sys/param.json")
-app="$root/dist/$title_id"
+app="${WOS_DIST_DIR:-$root/dist/$title_id}"
 mkdir -p "$app/sce_sys" "$app/sce_module" "$app/import"
 "$tool" self --sign --in "$build/eboot.elf.new" --out "$app/eboot.bin" --magic 0x1D3D154F
 "$tool" self --inspect --file "$app/eboot.bin"

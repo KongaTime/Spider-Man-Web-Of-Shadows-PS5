@@ -1,0 +1,36 @@
+{
+  "status": "captured-after-user-gameplay-confirmation",
+  "runtime_log": "wos_recomp_030.log",
+  "user_context": "Opening gameplay looking toward street/buildings",
+  "log_levels": {
+    "info": 554,
+    "warning": 11
+  },
+  "tail_diagnostics": [
+    "WOS coarse perf: 16.70 swaps/s, 59.88 ms/frame, graphics-thread CPU 36.78 ms/frame, draws 7229.3, query ends 0.0, queue submits 3.4",
+    "WOS coarse nested ms/frame: draw 23.40, primitives 0.65, bindings 8.52, residency 1.01, query-end 0.00, fence-wait 0.00, playback 2.04, queue-submit 0.43",
+    "WOS guest perf: 16.73 swaps/s, 59.78 ms/frame, calling-thread CPU 14.25 ms, VdSwap 0.00 ms",
+    "WOS coarse perf: 16.46 swaps/s, 60.75 ms/frame, graphics-thread CPU 36.90 ms/frame, draws 7213.2, query ends 0.0, queue submits 3.5",
+    "WOS coarse nested ms/frame: draw 23.46, primitives 0.66, bindings 8.52, residency 1.01, query-end 0.00, fence-wait 0.00, playback 2.03, queue-submit 0.58",
+    "WOS guest perf: 16.43 swaps/s, 60.88 ms/frame, calling-thread CPU 14.27 ms, VdSwap 0.00 ms",
+    "WOS guest perf: 16.47 swaps/s, 60.73 ms/frame, calling-thread CPU 14.10 ms, VdSwap 0.00 ms",
+    "WOS coarse perf: 16.48 swaps/s, 60.67 ms/frame, graphics-thread CPU 36.99 ms/frame, draws 7213.7, query ends 0.0, queue submits 3.4",
+    "WOS coarse nested ms/frame: draw 23.50, primitives 0.67, bindings 8.53, residency 1.04, query-end 0.00, fence-wait 0.00, playback 2.03, queue-submit 0.37",
+    "WOS guest perf: 16.44 swaps/s, 60.83 ms/frame, calling-thread CPU 14.15 ms, VdSwap 0.00 ms",
+    "WOS coarse perf: 16.42 swaps/s, 60.90 ms/frame, graphics-thread CPU 37.56 ms/frame, draws 7475.8, query ends 0.0, queue submits 3.5",
+    "WOS coarse nested ms/frame: draw 24.11, primitives 0.67, bindings 8.74, residency 0.89, query-end 0.00, fence-wait 0.00, playback 2.06, queue-submit 0.24",
+    "WOS guest perf: 16.64 swaps/s, 60.10 ms/frame, calling-thread CPU 14.23 ms, VdSwap 0.00 ms",
+    "WOS coarse perf: 16.64 swaps/s, 60.11 ms/frame, graphics-thread CPU 37.89 ms/frame, draws 7580.3, query ends 0.0, queue submits 3.4",
+    "WOS coarse nested ms/frame: draw 24.44, primitives 0.68, bindings 8.93, residency 0.84, query-end 0.00, fence-wait 0.00, playback 2.09, queue-submit 0.18",
+    "WOS guest perf: 16.07 swaps/s, 62.23 ms/frame, calling-thread CPU 14.21 ms, VdSwap 0.00 ms",
+    "WOS coarse perf: 16.10 swaps/s, 62.12 ms/frame, graphics-thread CPU 38.00 ms/frame, draws 7580.1, query ends 0.0, queue submits 3.3",
+    "WOS coarse nested ms/frame: draw 24.33, primitives 0.69, bindings 8.87, residency 0.87, query-end 0.00, fence-wait 0.00, playback 2.09, queue-submit 0.36",
+    "WOS guest perf: 16.15 swaps/s, 61.92 ms/frame, calling-thread CPU 14.37 ms, VdSwap 0.00 ms",
+    "WOS coarse perf: 16.13 swaps/s, 61.99 ms/frame, graphics-thread CPU 37.95 ms/frame, draws 7583.1, query ends 0.0, queue submits 3.2",
+    "WOS coarse nested ms/frame: draw 24.22, primitives 0.67, bindings 8.86, residency 0.84, query-end 0.00, fence-wait 0.00, playback 2.10, queue-submit 0.18",
+    "WOS guest perf: 16.17 swaps/s, 61.85 ms/frame, calling-thread CPU 14.16 ms, VdSwap 0.00 ms",
+    "WOS coarse perf: 16.15 swaps/s, 61.91 ms/frame, graphics-thread CPU 38.09 ms/frame, draws 7580.2, query ends 0.0, queue submits 3.4",
+    "WOS coarse nested ms/frame: draw 24.45, primitives 0.69, bindings 8.90, residency 0.88, query-end 0.00, fence-wait 0.00, playback 2.10, queue-submit 0.22"
+  ],
+  "limits": "Host wall and thread CPU measurements, not GPU timestamps. Regions nest; do not add totals."
+}

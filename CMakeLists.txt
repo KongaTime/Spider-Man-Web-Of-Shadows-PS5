@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.25)
 project(wos_ps5 LANGUAGES C CXX)
+option(WOS_FRAME_COST_DIAGNOSTICS "Enable coarse renderer cost logging for PS5 tests" OFF)
+option(WOS_REUSE_TEXTURE_BINDINGS "Test exact texture descriptor reuse" OFF)
+set(WOS_COMMAND_RING_SPIN_LIMIT 500 CACHE STRING "GPU command-ring spin limit (0-500)")
+if(NOT WOS_COMMAND_RING_SPIN_LIMIT MATCHES "^(0|[1-9][0-9]*)$" OR WOS_COMMAND_RING_SPIN_LIMIT GREATER 500)
+  message(FATAL_ERROR "WOS_COMMAND_RING_SPIN_LIMIT must be an integer from 0 to 500")
+endif()
 
 set(WOS_GENERATED_DIR "" CACHE PATH "Directory containing wos_recomp_init.h and sources.cmake")
 set(REXGLUE_SRC "" CACHE PATH "KongaTime/rexglue-sdk source checkout")
@@ -53,6 +59,9 @@ foreach(target wos_guest wos_app)
     -march=znver2 -mcmodel=large -msse4.1 -fno-strict-aliasing
     -fno-omit-frame-pointer -ffunction-sections -fdata-sections -O2)
 endforeach()
+target_compile_definitions(wos_app PRIVATE WOS_FRAME_COST_DIAGNOSTICS=$<BOOL:${WOS_FRAME_COST_DIAGNOSTICS}>)
+target_compile_definitions(wos_app PRIVATE WOS_REUSE_TEXTURE_BINDINGS=$<BOOL:${WOS_REUSE_TEXTURE_BINDINGS}>)
+target_compile_definitions(wos_app PRIVATE WOS_COMMAND_RING_SPIN_LIMIT=${WOS_COMMAND_RING_SPIN_LIMIT})
 # Optimize direct calls across generated translation units while preserving
 # the original floating-point and memory-access semantics.
 target_compile_options(wos_guest PRIVATE -O3 -flto=thin)
@@ -76,6 +85,10 @@ add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/eboot.elf"
     patches/rexglue-frame-diagnostics.patch patches/rexglue-disable-phase-timing.patch
     patches/rexglue-single-range.patch patches/rexglue-valid-page-fast-path.patch
     patches/rexglue-ps5-settings-navigation.patch
+    patches/rexglue-coarse-frame-costs.patch
+    patches/rexglue-texture-descriptor-reuse.patch
+    patches/rexglue-command-wait-breakdown.patch
+    patches/rexglue-command-ring-wait.patch
     dependencies.lock.json LICENSE sce_sys/param.json sce_sys/icon0.png
   COMMAND_EXPAND_LISTS VERBATIM)
 add_custom_target(title DEPENDS "${CMAKE_BINARY_DIR}/eboot.elf")

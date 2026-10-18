@@ -1,0 +1,24 @@
+{
+  "status": "built-deployed-launched-awaiting-user-gameplay-capture",
+  "purpose": "Measure wait intervals and call counts on the thread calling VdSwap",
+  "behavior": "Forward each original HLE call exactly once with the same PPC context and guest memory; no wait removal",
+  "host_tests": "ASan/UBSan passed with diagnostics ON and OFF: forwarding, context changes, timing units, reset and startup discard",
+  "linked_guest_import_mapping": "all seven entries verified to reference corresponding diagnostic wrappers",
+  "native": {
+    "title_link": "passed",
+    "self_integrity": "valid",
+    "load_segments": "five valid nonoverlapping load segments",
+    "signed_eboot_bytes": 102719821,
+    "signed_eboot_sha256": "57ce04b45f1dea0327e9f677da3393d8dd0103420f5fb0f161b36c339c3db4c4",
+    "executable_readback": {
+      "bytes": 105495672,
+      "sha256": "5cfdc26084a15b58c7ed5a99617f97c0624563b177623fac45d5cfb6bf6fdf1f",
+      "format": "extracted-without-version-trailer"
+    }
+  },
+  "console": {
+    "launched": true,
+    "gameplay_capture": "pending"
+  },
+  "limits": "Wall intervals can overlap; only the swapping thread is reported. Object identity and other threads are not measured."
+}

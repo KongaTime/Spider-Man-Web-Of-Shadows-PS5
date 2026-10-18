@@ -1,0 +1,67 @@
+{
+  "status": "gameplay-captured-ring-idle-time-separated-from-register-waits",
+  "target_more_than_60_game_frames_per_second": "not achieved",
+  "tests": {
+    "host_sanitizers": [
+      "address",
+      "undefined behavior"
+    ],
+    "coarse_timing_scopes": "passed: disabled/no clocks, nesting, stop, early return, interval/reset",
+    "command_wait_scopes": "passed: disabled/no clocks, nesting, ring CPU, interval/reset",
+    "texture_descriptor_reuse": "passed: 20000 modeled driver cases; console picture correct, no material speedup"
+  },
+  "native": {
+    "runtime_compile": "passed",
+    "title_link": "passed",
+    "self_integrity": "valid",
+    "load_segments": "five nonoverlapping valid load segments",
+    "signed_eboot_bytes": 102711421,
+    "signed_eboot_sha256": "b9a4322f91e15fd0ebc9d43e1fed47e2086a9d2d468a83d439e922312cf92b33",
+    "executable_readback": {
+      "bytes": 105478000,
+      "sha256": "eb075666975bc98c567ea332e07d388c216cdb8945e5047cb54b334210ae98b2",
+      "format": "extracted-without-version-trailer"
+    },
+    "diagnostics_enabled": true,
+    "texture_descriptor_reuse_enabled": true
+  },
+  "console": {
+    "launched": true,
+    "gameplay_capture": "passed: user confirmed in gameplay",
+    "settings_preserved": true,
+    "runtime_log": "wos_recomp_032.log",
+    "tail_diagnostics": [
+      "WOS guest perf: 17.14 swaps/s, 58.36 ms/frame, calling-thread CPU 15.20 ms, VdSwap 0.00 ms",
+      "WOS coarse perf: 17.28 swaps/s, 57.88 ms/frame, graphics-thread CPU 35.76 ms/frame, draws 7096.1, query ends 0.0, queue submits 3.3",
+      "WOS coarse nested ms/frame: draw 22.16, primitives 0.68, bindings 7.33, residency 1.00, query-end 0.00, fence-wait 0.00, playback 2.04, queue-submit 0.50",
+      "WOS texture descriptors/frame: reused 4787.3, written 1395.9",
+      "WOS extra nested ms/frame: swap 1.22, copy 3.19, fence-check-and-reclaim 0.02",
+      "WOS command waits ms/frame: ring-empty 24.47 (CPU 6.15), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.3, packets 98.1, sleeps 0.0, coherency 76.1",
+      "WOS guest perf: 16.98 swaps/s, 58.89 ms/frame, calling-thread CPU 14.90 ms, VdSwap 0.00 ms",
+      "WOS coarse perf: 16.92 swaps/s, 59.10 ms/frame, graphics-thread CPU 34.69 ms/frame, draws 6608.9, query ends 0.0, queue submits 3.2",
+      "WOS coarse nested ms/frame: draw 20.87, primitives 0.64, bindings 7.01, residency 0.88, query-end 0.00, fence-wait 0.00, playback 1.95, queue-submit 0.59",
+      "WOS texture descriptors/frame: reused 4338.9, written 1385.3",
+      "WOS extra nested ms/frame: swap 1.18, copy 3.13, fence-check-and-reclaim 0.02",
+      "WOS command waits ms/frame: ring-empty 27.19 (CPU 6.52), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.2, packets 98.1, sleeps 0.0, coherency 76.1",
+      "WOS guest perf: 17.10 swaps/s, 58.47 ms/frame, calling-thread CPU 14.90 ms, VdSwap 0.00 ms",
+      "WOS coarse perf: 16.99 swaps/s, 58.84 ms/frame, graphics-thread CPU 35.34 ms/frame, draws 6707.3, query ends 0.0, queue submits 3.5",
+      "WOS coarse nested ms/frame: draw 21.70, primitives 0.64, bindings 7.19, residency 1.02, query-end 0.00, fence-wait 0.00, playback 1.96, queue-submit 0.38",
+      "WOS texture descriptors/frame: reused 4416.7, written 1447.2",
+      "WOS extra nested ms/frame: swap 1.18, copy 3.65, fence-check-and-reclaim 0.02",
+      "WOS command waits ms/frame: ring-empty 25.30 (CPU 6.22), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.4, packets 98.1, sleeps 0.0, coherency 76.1"
+    ]
+  },
+  "limits": "Host nested timings only; direct GPU execution timestamps unavailable.",
+  "findings": {
+    "ring_empty_wall_ms_per_frame": "about 24-27 in representative tail windows",
+    "ring_empty_cpu_ms_per_frame": "about 6.1-6.5",
+    "wait_packet_ms_per_frame": "about 0.02",
+    "poll_sleep_ms_per_frame": "0.00 at displayed precision; zero sleep calls",
+    "coherency_ms_per_frame": "about 0.01",
+    "swap_ms_per_frame": "about 1.2",
+    "copy_ms_per_frame": "about 3.1-3.7",
+    "fence_check_and_reclaim_ms_per_frame": "about 0.02",
+    "inference": "Command-ring idling is waiting for new guest commands, not a measured GPU fence stall. Part of it consumes CPU in the yield/spin loop.",
+    "limit": "Timing ranges nest; rings may wait for legitimate producer work. Removing idle CPU work does not remove renderer or producer work."
+  }
+}

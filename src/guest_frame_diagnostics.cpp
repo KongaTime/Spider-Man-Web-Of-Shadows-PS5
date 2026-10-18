@@ -2,6 +2,7 @@
 #include <rex/chrono/clock.h>
 #include <rex/logging.h>
 #include <time.h>
+#include <array>
 
 namespace {
 uint64_t CpuNanoseconds() {
@@ -12,9 +13,47 @@ uint64_t CpuNanoseconds() {
 struct Sample {
   uint64_t last = 0, last_cpu = 0, frames = 0;
   double wall = 0, cpu = 0, swap = 0;
+  std::array<uint64_t, 6> wait_ns{}, wait_calls{};
 };
 thread_local Sample sample;
+
+void MeasureGuestWait(PPCContext& ctx, uint8_t* base, size_t kind,
+                      void (*original)(PPCContext&, uint8_t*)) {
+#if WOS_FRAME_COST_DIAGNOSTICS
+  const auto start = rex::chrono::Clock::QueryHostTickCount();
+  original(ctx, base);
+  sample.wait_ns[kind] += rex::chrono::Clock::QueryHostTickCount() - start;
+  ++sample.wait_calls[kind];
+#else
+  original(ctx, base);
+#endif
+}
 }  // namespace
+
+extern "C" void __real___imp__KeWaitForSingleObject(PPCContext&, uint8_t*);
+extern "C" void __wrap___imp__KeWaitForSingleObject(PPCContext& ctx, uint8_t* base) {
+  MeasureGuestWait(ctx, base, 0, __real___imp__KeWaitForSingleObject);
+}
+extern "C" void __real___imp__KeWaitForMultipleObjects(PPCContext&, uint8_t*);
+extern "C" void __wrap___imp__KeWaitForMultipleObjects(PPCContext& ctx, uint8_t* base) {
+  MeasureGuestWait(ctx, base, 1, __real___imp__KeWaitForMultipleObjects);
+}
+extern "C" void __real___imp__NtWaitForSingleObjectEx(PPCContext&, uint8_t*);
+extern "C" void __wrap___imp__NtWaitForSingleObjectEx(PPCContext& ctx, uint8_t* base) {
+  MeasureGuestWait(ctx, base, 2, __real___imp__NtWaitForSingleObjectEx);
+}
+extern "C" void __real___imp__NtWaitForMultipleObjectsEx(PPCContext&, uint8_t*);
+extern "C" void __wrap___imp__NtWaitForMultipleObjectsEx(PPCContext& ctx, uint8_t* base) {
+  MeasureGuestWait(ctx, base, 3, __real___imp__NtWaitForMultipleObjectsEx);
+}
+extern "C" void __real___imp__KeDelayExecutionThread(PPCContext&, uint8_t*);
+extern "C" void __wrap___imp__KeDelayExecutionThread(PPCContext& ctx, uint8_t* base) {
+  MeasureGuestWait(ctx, base, 4, __real___imp__KeDelayExecutionThread);
+}
+extern "C" void __real___imp__RtlEnterCriticalSection(PPCContext&, uint8_t*);
+extern "C" void __wrap___imp__RtlEnterCriticalSection(PPCContext& ctx, uint8_t* base) {
+  MeasureGuestWait(ctx, base, 5, __real___imp__RtlEnterCriticalSection);
+}
 
 // Preserve the original HLE implementation and PPC context. Count the calling
 // thread's CPU time between frame-producing calls, including native guest code.
@@ -35,9 +74,25 @@ extern "C" void __wrap___imp__VdSwap(PPCContext& ctx, uint8_t* base) {
                   "calling-thread CPU {:.2f} ms, VdSwap {:.2f} ms",
                   double(s.frames) * 1000 / s.wall, s.wall / s.frames,
                   s.cpu / s.frames, s.swap / s.frames);
+#if WOS_FRAME_COST_DIAGNOSTICS
+      const double scale = 1.0 / (1000000.0 * double(s.frames));
+      REXLOG_INFO("WOS guest waits ms/frame: KeSingle {:.2f}, KeMultiple {:.2f}, "
+                  "NtSingle {:.2f}, NtMultiple {:.2f}, delay {:.2f}, critical-section {:.2f}",
+                  s.wait_ns[0]*scale, s.wait_ns[1]*scale, s.wait_ns[2]*scale,
+                  s.wait_ns[3]*scale, s.wait_ns[4]*scale, s.wait_ns[5]*scale);
+      REXLOG_INFO("WOS guest wait calls/frame: KeSingle {:.1f}, KeMultiple {:.1f}, "
+                  "NtSingle {:.1f}, NtMultiple {:.1f}, delay {:.1f}, critical-section {:.1f}",
+                  double(s.wait_calls[0])/s.frames, double(s.wait_calls[1])/s.frames,
+                  double(s.wait_calls[2])/s.frames, double(s.wait_calls[3])/s.frames,
+                  double(s.wait_calls[4])/s.frames, double(s.wait_calls[5])/s.frames);
+#endif
+      s.wait_ns = {}; s.wait_calls = {};
       s.wall = s.cpu = s.swap = 0;
       s.frames = 0;
     }
+  } else {
+    // Startup/import waits are outside the first complete gameplay interval.
+    s.wait_ns = {}; s.wait_calls = {};
   }
   s.last = end;
   s.last_cpu = cpu;

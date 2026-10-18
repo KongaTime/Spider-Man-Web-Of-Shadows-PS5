@@ -1,0 +1,170 @@
+diff --git a/src/graphics/command_processor.cpp b/src/graphics/command_processor.cpp
+--- a/src/graphics/command_processor.cpp
++++ b/src/graphics/command_processor.cpp
+@@ -10,10 +10,12 @@
+  */
+ 
+ #include <algorithm>
++#include <array>
+ #include <cinttypes>
+ #include <cmath>
+ #include <cstring>
+ #include <string_view>
++#include <time.h>
+ 
+ #include <fmt/format.h>
+ 
+@@ -80,11 +82,68 @@
+                     "pipelines are being prepared.")
+     .lifecycle(rex::cvar::Lifecycle::kHotReload);
+ 
++REXCVAR_DEFINE_BOOL(wos_command_wait_costs, false, "GPU/Diagnostics",
++                    "Separate command-ring idle time from register waits and coherency work")
++    .lifecycle(rex::cvar::Lifecycle::kHotReload);
++
+ namespace rex::graphics {
+ 
+ using namespace rex::graphics::xenos;
+ 
+ namespace {
++
++enum class WosWaitKind { kRing, kPacket, kPollSleep, kCoherency, kCount };
++struct WosCommandWaitCosts {
++  std::array<uint64_t, size_t(WosWaitKind::kCount)> ns{}, calls{};
++  uint64_t ring_cpu = 0, last = 0, frames = 0;
++};
++thread_local WosCommandWaitCosts wos_wait_costs;
++uint64_t WosWaitThreadCpu() {
++#if !REX_PLATFORM_WIN32
++  timespec time{};
++  if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time) == 0)
++    return uint64_t(time.tv_sec) * 1000000000ull + time.tv_nsec;
++#endif
++  return 0;
++}
++struct WosWaitScope {
++  WosWaitKind kind;
++  bool enabled = REXCVAR_GET(wos_command_wait_costs);
++  uint64_t start = 0, cpu_start = 0;
++  explicit WosWaitScope(WosWaitKind value) : kind(value) {
++    if (!enabled) return;
++    start = rex::chrono::Clock::QueryHostTickCount();
++    if (kind == WosWaitKind::kRing) cpu_start = WosWaitThreadCpu();
++  }
++  ~WosWaitScope() {
++    if (!enabled) return;
++    auto& state = wos_wait_costs;
++    state.ns[size_t(kind)] += rex::chrono::Clock::QueryHostTickCount() - start;
++    ++state.calls[size_t(kind)];
++    if (kind == WosWaitKind::kRing && cpu_start) {
++      const auto cpu = WosWaitThreadCpu();
++      if (cpu >= cpu_start) state.ring_cpu += cpu - cpu_start;
++    }
++  }
++};
++void WosReportCommandWaitCosts() {
++  auto& state = wos_wait_costs;
++  if (!REXCVAR_GET(wos_command_wait_costs)) { state = {}; return; }
++  const auto now = rex::chrono::Clock::QueryHostTickCount();
++  if (!state.last) { state = {}; state.last = now; return; }
++  ++state.frames;
++  if (now - state.last < 2000000000ull) return;
++  const double frames = double(state.frames), scale = 1.0 / (1000000.0 * frames);
++  const auto ms = [&](WosWaitKind kind) { return double(state.ns[size_t(kind)]) * scale; };
++  const auto calls = [&](WosWaitKind kind) { return double(state.calls[size_t(kind)]) / frames; };
++  REXLOG_INFO("WOS command waits ms/frame: ring-empty {:.2f} (CPU {:.2f}), wait-packet {:.2f}, "
++              "nested poll-sleep {:.2f}, nested coherency {:.2f}; calls/frame ring {:.1f}, packets {:.1f}, sleeps {:.1f}, coherency {:.1f}",
++              ms(WosWaitKind::kRing), double(state.ring_cpu) * scale, ms(WosWaitKind::kPacket),
++              ms(WosWaitKind::kPollSleep), ms(WosWaitKind::kCoherency),
++              calls(WosWaitKind::kRing), calls(WosWaitKind::kPacket),
++              calls(WosWaitKind::kPollSleep), calls(WosWaitKind::kCoherency));
++  state = {}; state.last = now;
++}
+ 
+ ReadbackResolveMode ParseReadbackResolveMode(std::string_view value) {
+   if (value == "fast") {
+@@ -216,6 +275,7 @@
+ 
+     uint32_t write_ptr_index = write_ptr_index_.load();
+     if (write_ptr_index == 0xBAADF00D || read_ptr_index_ == write_ptr_index) {
++      WosWaitScope wos_ring_wait(WosWaitKind::kRing);
+       SCOPE_profile_cpu_i("gpu", "rex::graphics::CommandProcessor::Stall");
+       // We've run out of commands to execute.
+       // We spin here waiting for new ones, as the overhead of waiting on our
+@@ -969,6 +1029,7 @@
+   reader->AdvanceRead((count - 4) * sizeof(uint32_t));
+ 
+   IssueSwap(frontbuffer_ptr, frontbuffer_width, frontbuffer_height);
++  WosReportCommandWaitCosts();
+ 
+   ++counter_;
+   return true;
+@@ -987,6 +1048,7 @@
+ 
+ bool CommandProcessor::ExecutePacketType3_WAIT_REG_MEM(memory::RingBuffer* reader, uint32_t packet,
+                                                        uint32_t count) {
++  WosWaitScope wos_packet_wait(WosWaitKind::kPacket);
+   SCOPE_profile_cpu_f("gpu");
+ 
+   // wait until a register or memory location is a specific value
+@@ -1009,6 +1071,7 @@
+     } else {
+       value = ReadRegisterValue(poll_reg_addr);
+       if (poll_reg_addr == XE_GPU_REG_COHER_STATUS_HOST) {
++        WosWaitScope wos_coherency(WosWaitKind::kCoherency);
+         MakeCoherent();
+         value = ReadRegisterValue(poll_reg_addr);
+       }
+@@ -1042,6 +1105,7 @@
+     if (!matched) {
+       // Wait.
+       if (wait >= 0x100) {
++        WosWaitScope wos_poll_sleep(WosWaitKind::kPollSleep);
+         PrepareForWait();
+         if (!REXCVAR_GET(vsync)) {
+           // User wants it fast and dangerous.
+diff --git a/src/graphics/vulkan/command_processor.cpp b/src/graphics/vulkan/command_processor.cpp
+--- a/src/graphics/vulkan/command_processor.cpp
++++ b/src/graphics/vulkan/command_processor.cpp
+@@ -88,7 +88,7 @@
+ // Opt-in host measurements. Timed regions nest, so these totals must not be
+ // added together. No GPU commands, synchronization or guest timing are changed.
+ enum class WosCost { kDraw, kPrimitives, kBindings, kResidency, kQueryEnd,
+-                     kFenceWait, kPlayback, kQueueSubmit, kCount };
++                     kFenceWait, kPlayback, kQueueSubmit, kSwap, kCopy, kFenceCheck, kCount };
+ struct WosFrameCosts {
+   std::array<uint64_t, size_t(WosCost::kCount)> ns{}, calls{};
+   uint64_t last = 0, last_cpu = 0, frames = 0;
+@@ -141,6 +141,8 @@
+                 ms(WosCost::kPlayback), ms(WosCost::kQueueSubmit));
+     REXLOG_INFO("WOS texture descriptors/frame: reused {:.1f}, written {:.1f}",
+                 double(state.texture_reuses) / frames, double(state.texture_writes) / frames);
++    REXLOG_INFO("WOS extra nested ms/frame: swap {:.2f}, copy {:.2f}, fence-check-and-reclaim {:.2f}",
++                ms(WosCost::kSwap), ms(WosCost::kCopy), ms(WosCost::kFenceCheck));
+     state = {}; state.last = now; state.last_cpu = cpu;
+   }
+ };
+@@ -2429,6 +2431,7 @@
+ void VulkanCommandProcessor::IssueSwap(uint32_t frontbuffer_ptr, uint32_t frontbuffer_width,
+                                        uint32_t frontbuffer_height) {
+   WosCostReport wos_cost_report;
++  WosCostScope wos_swap_cost(WosCost::kSwap);
+ #if WOS_ENABLE_PHASE_TIMING
+   WosSwapReport wos_report;
+ #endif
+@@ -4615,6 +4618,7 @@
+ }
+ 
+ bool VulkanCommandProcessor::IssueCopy() {
++  WosCostScope wos_copy_cost(WosCost::kCopy);
+ #if XE_GPU_FINE_GRAINED_DRAW_SCOPES
+   SCOPE_profile_cpu_f("gpu");
+ #endif  // XE_GPU_FINE_GRAINED_DRAW_SCOPES
+@@ -5178,6 +5182,7 @@
+ }
+ 
+ void VulkanCommandProcessor::CheckSubmissionFenceAndDeviceLoss(uint64_t await_submission) {
++  WosCostScope wos_fence_check_cost(WosCost::kFenceCheck);
+   // Only report once, no need to retry a wait that won't succeed anyway.
+   if (device_lost_) {
+     return;

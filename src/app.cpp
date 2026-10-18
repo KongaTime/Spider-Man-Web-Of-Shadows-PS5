@@ -4,6 +4,7 @@
 #include "graphics_backend.h"
 
 #include <memory>
+#include <string>
 #include <rex/cvar.h>
 #include <rex/logging.h>
 #include <rex/rex_app.h>
@@ -26,6 +27,19 @@ class WosPs5App final : public rex::ReXApp {
   }
 
   void OnPreSetup(rex::RuntimeConfig& config) override {
+#if WOS_COMMAND_RING_SPIN_LIMIT != 500
+    rex::cvar::SetFlagByName("wos_command_ring_spin_limit", std::to_string(WOS_COMMAND_RING_SPIN_LIMIT));
+    REXLOG_INFO("Web of Shadows: command-ring spin limit {}", WOS_COMMAND_RING_SPIN_LIMIT);
+#endif
+#if WOS_REUSE_TEXTURE_BINDINGS
+    rex::cvar::SetFlagByName("wos_reuse_texture_bindings", "true");
+    REXLOG_INFO("Web of Shadows: exact texture descriptor reuse enabled");
+#endif
+#if WOS_FRAME_COST_DIAGNOSTICS
+    rex::cvar::SetFlagByName("wos_command_wait_costs", "true");
+    rex::cvar::SetFlagByName("wos_frame_costs", "true");
+    REXLOG_INFO("Web of Shadows: coarse host renderer diagnostics enabled; timings overlap");
+#endif
     // Construct the statically linked Vulkan backend directly. PS5 titles cannot
     // load the desktop rexgpu-xenos DLL/shared library.
     config.gpu_plugin.clear();

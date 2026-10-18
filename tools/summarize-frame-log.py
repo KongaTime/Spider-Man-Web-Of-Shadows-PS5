@@ -16,7 +16,7 @@ args = parser.parse_args()
 start = None
 rows = []
 for line in args.source.read_text(errors='replace').splitlines():
-    match = re.search(r'WOS (?:perf:|phases ms/frame:|guest perf:|frame times:|scheduling:).*', line)
+    match = re.search(r'WOS (?:perf:|phases ms/frame:|guest perf:|frame times:|scheduling:|coarse perf:|coarse nested ms/frame:|texture descriptors/frame:|command waits ms/frame:|extra nested ms/frame:|guest waits ms/frame:|guest wait calls/frame:).*', line)
     if not match:
         continue
     stamp = re.match(r'\[([^\]]+)\]', line)

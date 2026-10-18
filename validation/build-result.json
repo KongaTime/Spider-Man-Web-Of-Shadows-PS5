@@ -94,7 +94,7 @@
     "console_readback": "passed",
     "user_test": "passed: user confirmed navigation works on PS5"
   },
-  "scheduling_diagnostics": "Command processor wait intervals and whole-process CPU time added; captures pending",
-  "artifacts_scope": "Previously deployed settings-navigation build; see valid-page-fast-path.json for current local candidate",
-  "latest_local_candidate": "valid-page-fast-path.json; console picture confirmed, speed improvement inconclusive"
+  "scheduling_diagnostics": "Command waits captured in wait-breakdown-result.json; short-spin test in command-ring-wait-result.json; game-thread wait capture pending",
+  "artifacts_scope": "Historical settings-navigation build; current diagnostic candidate is separately recorded in guest-wait-probe-result.json",
+  "latest_local_candidate": "guest-wait-probe-result.json; built, readback verified and launched; gameplay capture pending"
 }

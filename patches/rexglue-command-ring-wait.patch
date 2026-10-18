@@ -1,0 +1,36 @@
+diff --git a/src/graphics/command_processor.cpp b/src/graphics/command_processor.cpp
+--- a/src/graphics/command_processor.cpp
++++ b/src/graphics/command_processor.cpp
+@@ -84,6 +84,11 @@
+ 
+ REXCVAR_DEFINE_BOOL(wos_command_wait_costs, false, "GPU/Diagnostics",
+                     "Separate command-ring idle time from register waits and coherency work")
++    .lifecycle(rex::cvar::Lifecycle::kHotReload);
++
++REXCVAR_DEFINE_INT32(wos_command_ring_spin_limit, 500, "GPU/Diagnostics",
++                     "Yield iterations before waiting for new GPU commands; 500 preserves the original policy")
++    .range(0, 500)
+     .lifecycle(rex::cvar::Lifecycle::kHotReload);
+ 
+ namespace rex::graphics {
+@@ -225,6 +230,8 @@
+     fn();
+   } else {
+     pending_fns_.push(std::move(fn));
++    // The worker may already be sleeping on the command-ring event.
++    write_ptr_index_event_->Set();
+   }
+ }
+ 
+@@ -282,9 +289,10 @@
+       // event is too high.
+       PrepareForWait();
+       uint32_t loop_count = 0;
++      const uint32_t spin_limit = uint32_t(REXCVAR_GET(wos_command_ring_spin_limit));
+       do {
+         // If we spin around too much, revert to a "low-power" state.
+-        if (loop_count > 500) {
++        if (loop_count > spin_limit) {
+           const int wait_time_ms = 5;
+           rex::thread::Wait(write_ptr_index_event_.get(), true,
+                             std::chrono::milliseconds(wait_time_ms));

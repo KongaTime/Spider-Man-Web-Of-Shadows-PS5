@@ -1,0 +1,150 @@
+diff --git a/src/graphics/vulkan/command_processor.cpp b/src/graphics/vulkan/command_processor.cpp
+--- a/src/graphics/vulkan/command_processor.cpp
++++ b/src/graphics/vulkan/command_processor.cpp
+@@ -15,6 +15,7 @@
+ #include <cstring>
+ #include <iterator>
+ #include <mutex>
++#include <span>
+ #include <string>
+ #include <string_view>
+ #include <tuple>
+@@ -76,6 +77,10 @@
+                     "Log coarse host draw and synchronization costs every two seconds")
+     .lifecycle(rex::cvar::Lifecycle::kHotReload);
+ 
++REXCVAR_DEFINE_BOOL(wos_reuse_texture_bindings, false, "GPU/Vulkan",
++                    "Reuse consecutive texture descriptors when their complete Vulkan inputs match")
++    .lifecycle(rex::cvar::Lifecycle::kHotReload);
++
+ namespace rex::graphics::vulkan {
+ 
+ namespace {
+@@ -87,6 +92,7 @@
+ struct WosFrameCosts {
+   std::array<uint64_t, size_t(WosCost::kCount)> ns{}, calls{};
+   uint64_t last = 0, last_cpu = 0, frames = 0;
++  uint64_t texture_reuses = 0, texture_writes = 0;
+ };
+ thread_local WosFrameCosts wos_costs;
+ struct WosCostScope {
+@@ -133,9 +139,42 @@
+                 ms(WosCost::kDraw), ms(WosCost::kPrimitives), ms(WosCost::kBindings),
+                 ms(WosCost::kResidency), ms(WosCost::kQueryEnd), ms(WosCost::kFenceWait),
+                 ms(WosCost::kPlayback), ms(WosCost::kQueueSubmit));
++    REXLOG_INFO("WOS texture descriptors/frame: reused {:.1f}, written {:.1f}",
++                double(state.texture_reuses) / frames, double(state.texture_writes) / frames);
+     state = {}; state.last = now; state.last_cpu = cpu;
+   }
+ };
++
++// Compare the actual Vulkan descriptor contents, including the image-view and
++// sampler handles. Shader identities or fetch-constant hashes alone miss
++// texture-streaming changes. The existing descriptor validity bits still gate
++// reuse, so frame/cache resets and allocation failures force fresh writes.
++struct WosTextureDescriptorSnapshot {
++  VkDescriptorSetLayout layout = VK_NULL_HANDLE;
++  uint32_t texture_count = 0, sampler_count = 0;
++  std::vector<VkDescriptorImageInfo> images;
++  bool Matches(VkDescriptorSetLayout new_layout, uint32_t textures, uint32_t samplers,
++               std::span<const VkDescriptorImageInfo> inputs) const {
++    if (layout != new_layout || texture_count != textures || sampler_count != samplers ||
++        images.size() != inputs.size()) return false;
++    for (size_t i = 0; i < inputs.size(); ++i) {
++      if (images[i].imageView != inputs[i].imageView ||
++          images[i].imageLayout != inputs[i].imageLayout ||
++          images[i].sampler != inputs[i].sampler) return false;
++    }
++    return true;
++  }
++  void Store(VkDescriptorSetLayout new_layout, uint32_t textures, uint32_t samplers,
++             std::span<const VkDescriptorImageInfo> inputs) {
++    layout = new_layout; texture_count = textures; sampler_count = samplers;
++    images.assign(inputs.begin(), inputs.end());
++  }
++};
++struct WosTextureDescriptorSnapshots {
++  const VulkanCommandProcessor* owner = nullptr;
++  std::array<WosTextureDescriptorSnapshot, 2> stages;
++};
++thread_local WosTextureDescriptorSnapshots wos_texture_snapshots;
+ 
+ // Disable per-draw host timing for release-mode performance comparisons.
+ // Re-enable by compiling with -DWOS_ENABLE_PHASE_TIMING=1.
+@@ -6774,6 +6813,8 @@
+     texture_count_pixel = 0;
+   }
+   // TODO(Triang3l): Reuse texture and sampler bindings if not changed.
++  const uint32_t texture_values_before = current_graphics_descriptor_set_values_up_to_date_;
++  const bool reuse_texture_descriptors = REXCVAR_GET(wos_reuse_texture_bindings);
+   current_graphics_descriptor_set_values_up_to_date_ &=
+       ~((UINT32_C(1) << SpirvShaderTranslator::kDescriptorSetTexturesVertex) |
+         (UINT32_C(1) << SpirvShaderTranslator::kDescriptorSetTexturesPixel));
+@@ -6835,6 +6876,41 @@
+          current_samplers_pixel_) {
+       VkDescriptorImageInfo& descriptor_image_info = descriptor_write_image_info_.emplace_back();
+       descriptor_image_info.sampler = sampler_pair.second;
++    }
++  }
++
++  // Reuse only sets that were valid before the conservative invalidation
++  // above. Keep rebinding them with the current pipeline layout; this does not
++  // assume that a previously bound layout is compatible.
++  auto& texture_snapshots = wos_texture_snapshots;
++  if (!reuse_texture_descriptors) texture_snapshots.owner = nullptr;
++  if (reuse_texture_descriptors) {
++    if (texture_snapshots.owner != this) {
++      texture_snapshots = {};
++      texture_snapshots.owner = this;
++    }
++    const auto try_reuse = [&](uint32_t stage, uint32_t bit, VkDescriptorSetLayout layout,
++                               uint32_t textures, uint32_t samplers, size_t offset) {
++      if (!(texture_values_before & bit) ||
++          !texture_snapshots.stages[stage].Matches(
++              layout, textures, samplers,
++              std::span<const VkDescriptorImageInfo>(descriptor_write_image_info_).subspan(
++                  offset, size_t(textures) + samplers))) return false;
++      current_graphics_descriptor_set_values_up_to_date_ |= bit;
++      if (REXCVAR_GET(wos_frame_costs)) ++wos_costs.texture_reuses;
++      return true;
++    };
++    if (write_vertex_textures && try_reuse(
++            0, UINT32_C(1) << SpirvShaderTranslator::kDescriptorSetTexturesVertex,
++            current_guest_graphics_pipeline_layout_->descriptor_set_layout_textures_vertex_ref(),
++            texture_count_vertex, sampler_count_vertex, vertex_texture_image_info_offset)) {
++      write_vertex_textures = false;
++    }
++    if (write_pixel_textures && try_reuse(
++            1, UINT32_C(1) << SpirvShaderTranslator::kDescriptorSetTexturesPixel,
++            current_guest_graphics_pipeline_layout_->descriptor_set_layout_textures_pixel_ref(),
++            texture_count_pixel, sampler_count_pixel, pixel_texture_image_info_offset)) {
++      write_pixel_textures = false;
+     }
+   }
+ 
+@@ -6927,6 +7003,25 @@
+   }
+   // Only make valid if all descriptor sets have been allocated and written
+   // successfully.
++  if (REXCVAR_GET(wos_frame_costs)) {
++    wos_costs.texture_writes += uint64_t(write_vertex_textures) + uint64_t(write_pixel_textures);
++  }
++  if (reuse_texture_descriptors) {
++    if (write_vertex_textures) {
++      texture_snapshots.stages[0].Store(
++          current_guest_graphics_pipeline_layout_->descriptor_set_layout_textures_vertex_ref(),
++          texture_count_vertex, sampler_count_vertex,
++          std::span<const VkDescriptorImageInfo>(descriptor_write_image_info_).subspan(
++              vertex_texture_image_info_offset, size_t(texture_count_vertex) + sampler_count_vertex));
++    }
++    if (write_pixel_textures) {
++      texture_snapshots.stages[1].Store(
++          current_guest_graphics_pipeline_layout_->descriptor_set_layout_textures_pixel_ref(),
++          texture_count_pixel, sampler_count_pixel,
++          std::span<const VkDescriptorImageInfo>(descriptor_write_image_info_).subspan(
++              pixel_texture_image_info_offset, size_t(texture_count_pixel) + sampler_count_pixel));
++    }
++  }
+   current_graphics_descriptor_set_values_up_to_date_ |= write_descriptor_set_bits;
+ 
+   // Bind the new descriptor sets.
