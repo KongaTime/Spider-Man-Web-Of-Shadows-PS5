@@ -176,7 +176,17 @@ ASan/UBSan, 720 cases covered priority boundaries, zero/sub-ms/nonzero delays,
 duration scaling, alertable completion/APCs and termination checks, using
 recorded mock sleep/yield calls. These checks establish the branch behavior;
 the runtime 034 totals alone do not prove all delay calls used the faulty
-branch, and no console speedup from this correction is claimed yet.
+branch.
+
+Runtime 035 **regressed** to roughly 7.2–7.9 guest swaps/second in the captured
+tail, matching the user's report of much slower gameplay. NtSingle polling
+rose to about 111,600–123,500 calls/frame, taking 66–72 ms/frame. Delay calls
+rose to roughly 3,900–4,300/frame, taking 18.5–20.8 ms/frame. Calling-thread CPU
+rose to about 86–87 ms/frame. This shows that eliminating backoff can increase
+polling and CPU load enough to hurt throughput. The original backoff has been
+restored in the runtime source and the experiment removed from the active
+dependency list. Its host tests establish branch behavior, not a useful PS5
+scheduling policy. Sanitized rows are in `coarse-zero-delay-regression.json`.
 
 ## High-frame-rate timing constraints
 

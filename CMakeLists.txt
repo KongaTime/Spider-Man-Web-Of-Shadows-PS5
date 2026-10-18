@@ -89,7 +89,6 @@ add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/eboot.elf"
     patches/rexglue-texture-descriptor-reuse.patch
     patches/rexglue-command-wait-breakdown.patch
     patches/rexglue-command-ring-wait.patch
-    patches/rexglue-zero-delay-priority.patch
     dependencies.lock.json LICENSE sce_sys/param.json sce_sys/icon0.png
   COMMAND_EXPAND_LISTS VERBATIM)
 add_custom_target(title DEPENDS "${CMAKE_BINARY_DIR}/eboot.elf")

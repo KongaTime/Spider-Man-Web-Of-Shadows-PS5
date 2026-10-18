@@ -1,5 +1,5 @@
 {
-  "status": "built-deployed-launched-awaiting-gameplay-comparison",
+  "status": "rejected-original-backoff-restored-deployed-and-launched",
   "target_more_than_60_game_frames_per_second": "not achieved",
   "patch": "patches/rexglue-zero-delay-priority.patch",
   "change": "Classify stored guest priority increments using the same below-normal boundary as SetPriority instead of comparing to POSIX host priority constant +8",
@@ -24,7 +24,54 @@
     "command_ring_spin_limit": 16,
     "settings_bytes_preserved": true,
     "baseline": "guest-wait-probe-result.json and coarse-guest-waits.json; runtime 034",
-    "gameplay_capture": "pending"
+    "gameplay_capture": "user confirmed correct behavior but much slower",
+    "runtime_log": "wos_recomp_035.log",
+    "log_levels": {
+      "info": 725,
+      "warning": 11
+    },
+    "representative_tail": {
+      "guest_swaps_per_second": "7.24-7.86",
+      "wall_ms_per_frame": "127.18-138.20",
+      "calling_thread_cpu_ms_per_frame": "86.44-87.06",
+      "nt_single_wait_calls_per_frame": "111596.1-123546.4",
+      "nt_single_wait_ms_per_frame": "66.27-72.16",
+      "thread_delay_calls_per_frame": "3904.8-4288.4",
+      "thread_delay_ms_per_frame": "18.50-20.77"
+    },
+    "tail_diagnostics": [
+      "WOS coarse perf: 7.91 swaps/s, 126.34 ms/frame, graphics-thread CPU 37.95 ms/frame, draws 5283.4, query ends 0.0, queue submits 3.3",
+      "WOS coarse nested ms/frame: draw 19.41, primitives 0.82, bindings 6.29, residency 1.03, query-end 0.00, fence-wait 0.00, playback 1.69, queue-submit 0.17",
+      "WOS texture descriptors/frame: reused 3346.2, written 1120.3",
+      "WOS extra nested ms/frame: swap 1.09, copy 3.93, fence-check-and-reclaim 0.02",
+      "WOS command waits ms/frame: ring-empty 96.05 (CPU 12.06), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.3, packets 98.1, sleeps 0.0, coherency 76.1",
+      "WOS guest perf: 7.86 swaps/s, 127.18 ms/frame, calling-thread CPU 87.06 ms, VdSwap 0.00 ms",
+      "WOS guest waits ms/frame: KeSingle 0.00, KeMultiple 0.00, NtSingle 66.27, NtMultiple 0.00, delay 18.50, critical-section 0.00",
+      "WOS guest wait calls/frame: KeSingle 0.0, KeMultiple 0.0, NtSingle 123546.4, NtMultiple 0.0, delay 3904.8, critical-section 2.4",
+      "WOS coarse perf: 7.24 swaps/s, 138.17 ms/frame, graphics-thread CPU 43.54 ms/frame, draws 6668.4, query ends 0.0, queue submits 3.3",
+      "WOS coarse nested ms/frame: draw 22.39, primitives 0.78, bindings 7.55, residency 1.08, query-end 0.00, fence-wait 0.00, playback 2.08, queue-submit 0.18",
+      "WOS texture descriptors/frame: reused 4406.2, written 1427.8",
+      "WOS extra nested ms/frame: swap 1.29, copy 2.80, fence-check-and-reclaim 0.02",
+      "WOS command waits ms/frame: ring-empty 104.77 (CPU 13.16), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.2, packets 99.3, sleeps 0.0, coherency 77.3",
+      "WOS guest perf: 7.24 swaps/s, 138.20 ms/frame, calling-thread CPU 86.44 ms, VdSwap 0.00 ms",
+      "WOS guest waits ms/frame: KeSingle 0.00, KeMultiple 0.00, NtSingle 72.16, NtMultiple 0.00, delay 20.77, critical-section 0.00",
+      "WOS guest wait calls/frame: KeSingle 0.0, KeMultiple 0.0, NtSingle 111596.1, NtMultiple 0.0, delay 4288.4, critical-section 2.7"
+    ]
   },
-  "limits": "Host tests establish branch behavior, not PS5 performance. Baseline aggregate delay totals do not establish how many calls used the corrected branch. Console comparison required."
+  "limits": "Scene workloads differ; exact causal distribution across threads is not measured. The severe user-visible regression and polling/CPU increases are sufficient to reject the experiment.",
+  "findings": "Removing the original backoff increased polling and calling-thread CPU load dramatically, with much worse throughput. The host branch tests did not establish a useful console scheduling policy.",
+  "recommendation": "Do not apply this experiment. Original runtime backoff restored in source, experiment removed from active dependency list.",
+  "rollback": {
+    "status": "complete: source restored, executable rebuilt, deployed and launched",
+    "signed_eboot_sha256": "57ce04b45f1dea0327e9f677da3393d8dd0103420f5fb0f161b36c339c3db4c4",
+    "signed_executable_byte_identical_to_runtime_034": true,
+    "readback_identical_to_runtime_034": true,
+    "executable_readback": {
+      "bytes": 105495672,
+      "sha256": "5cfdc26084a15b58c7ed5a99617f97c0624563b177623fac45d5cfb6bf6fdf1f",
+      "format": "extracted-without-version-trailer"
+    },
+    "settings_bytes_preserved": true,
+    "gameplay_recheck": "not performed after restoration; executable is byte-identical to prior baseline"
+  }
 }

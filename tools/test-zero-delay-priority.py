@@ -1,14 +1,24 @@
-"""Exercise the actual Delay and SetPriority methods with recorded host sleep/yield calls."""
+"""Test the REJECTED priority experiment in a scratch copy; not a performance recommendation."""
 from pathlib import Path
 import argparse
 import subprocess
+import tempfile
 
 parser = argparse.ArgumentParser()
 parser.add_argument('sdk', type=Path)
 parser.add_argument('--work-dir', type=Path, required=True)
 parser.add_argument('--cxx', default='clang++')
+parser.add_argument('--experimental-patch', type=Path, required=True,
+                    help='Explicit rejected patch to test in a scratch source copy; never changes SDK')
 args = parser.parse_args()
-source = (args.sdk / 'src/system/xthread.cpp').read_text()
+with tempfile.TemporaryDirectory(prefix='wos-rejected-delay-test-') as scratch:
+    scratch = Path(scratch)
+    copied = scratch / 'src/system/xthread.cpp'
+    copied.parent.mkdir(parents=True)
+    copied.write_bytes((args.sdk / 'src/system/xthread.cpp').read_bytes())
+    subprocess.run(['git', '-C', str(scratch), 'apply',
+                    str(args.experimental_patch.resolve())], check=True)
+    source = copied.read_text()
 
 def method(source, name):
     start = source.index(name)
