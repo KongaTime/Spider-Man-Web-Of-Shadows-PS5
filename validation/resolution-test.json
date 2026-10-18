@@ -1,0 +1,13 @@
+{
+  "requested_video_mode": [
+    854,
+    480
+  ],
+  "observed_guest_swap_dimensions": [
+    1280,
+    720
+  ],
+  "user_feedback": "About the same",
+  "conclusion": "Game did not reduce its render dimensions. This does not establish a GPU-load comparison.",
+  "restoration": "1280x720 restored and verified by configuration readback before current launch"
+}

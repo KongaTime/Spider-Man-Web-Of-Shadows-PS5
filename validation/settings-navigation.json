@@ -1,0 +1,11 @@
+{
+  "patch": "patches/rexglue-ps5-settings-navigation.patch",
+  "sha256": "bad301487c98289a8d8c6de27b69a44f5ce6e20dbce0aefd2125231e684a0265",
+  "shortcut": "L1 + R1 + Options to open and close",
+  "controls": "D-pad navigation; Cross activates; Circle backs out of an active control",
+  "host_test": "Passed against real ImGui widgets with ASan/UBSan: navigation, checkbox activation, disconnect key release",
+  "game_input": "Settings overlay consumes guest controller input while open",
+  "ps5_build": "passed",
+  "console_readback": "passed",
+  "user_test": "pending"
+}

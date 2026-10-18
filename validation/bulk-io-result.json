@@ -1,0 +1,12 @@
+{
+  "files_sha256_compared": 750,
+  "all_equal": true,
+  "files_reextracted": [
+    "default.xex",
+    "game_shared.ini",
+    "packs/ACT3_NOON.XEPACK",
+    "sound/soundsrc_rvb.pck"
+  ],
+  "reused_files": 746,
+  "largest_reextracted_bytes": 1493475328
+}

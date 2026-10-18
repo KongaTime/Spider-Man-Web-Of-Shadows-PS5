@@ -1,0 +1,17 @@
+{
+  "console_clock_read_cost_ns": {
+    "monotonic": 997.47,
+    "monotonic_precise": 1032.53,
+    "thread_cpu": 983.6,
+    "rdtsc": 13.26
+  },
+  "tsc_frequency_hz": 1596300190,
+  "elapsed_comparison": {
+    "system_clock_ns": 106693518,
+    "tsc_ns": 106692564.51,
+    "absolute_difference_ns": 953.49
+  },
+  "runtime_clock_units": "nanoseconds, frequency 1000000000 Hz",
+  "runtime_clock_origin": "anchored to CLOCK_MONOTONIC_PRECISE; wall-clock FILETIME unchanged",
+  "integrated_game_test": "boots, renders and reaches gameplay; no material performance improvement confirmed by user"
+}

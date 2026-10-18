@@ -1,0 +1,98 @@
+{
+  "status": "gameplay-reached-performance-work-in-progress",
+  "generated_game_compilation": "passed",
+  "app_compilation": "passed",
+  "platform_compilation": "passed",
+  "rexglue_runtime": "built",
+  "static_xenos_backend": "built",
+  "radv_release": "built",
+  "load_segment_check": "passed: five nonoverlapping load segments with valid bounds and alignment",
+  "self_integrity": "valid",
+  "artifacts": {
+    "eboot.bin": {
+      "bytes": 102691725,
+      "sha256": "55cd16a96325eced524c9a4e4d253f44a781e095e79cc9cc3fe5e960069b62f6"
+    },
+    "sce_module/libc.prx": {
+      "bytes": 1284674,
+      "sha256": "e6ff45d16adf687855cc3b33b0c8a4132b6504360b221e0a34c7e99fb3ba0036"
+    },
+    "sce_sys/param.json": {
+      "bytes": 803,
+      "sha256": "d7488c0f43ad64740b650ce106f2a5a05687675e30bf2f0347ecd6c3e9b48be3"
+    },
+    "sce_sys/icon0.png": {
+      "bytes": 15676,
+      "sha256": "21797b42c70be79fc173307c29814bcf5a5b825fc129123cd544063ea8955d98"
+    }
+  },
+  "console": {
+    "uploaded": true,
+    "readback": "all executable and runtime bytes matched canonical extraction; FTP omits non-loadable version trailers",
+    "launch_attempted": true,
+    "launch_response": "0x00006018: running",
+    "application_start_observed": true,
+    "gameplay_validated": false,
+    "setup_screen": "confirmed visible by user",
+    "presentation": "3840x2160 Vulkan swapchain",
+    "controller": "detected",
+    "on_console_import": "completed: 750 files, 5579143780 bytes; layout and executable checks passed",
+    "game_picture": "confirmed visible by user",
+    "audio": "confirmed audible by user",
+    "input": "X advances and app remains open, confirmed by user",
+    "latest_guest_fault": null,
+    "rendering": "Vulkan fragment shader interlock, asynchronous compilation",
+    "initial_gameplay_reached": true,
+    "performance": "Camera comparison: roughly 19 swaps/s looking down and 11-12 swaps/s looking toward the world; still poor. Single-range optimization not visibly faster.",
+    "timing": "Nanosecond monotonic clock anchored to kernel time, accelerated with invariant TSC",
+    "vsync": "enabled; disabling accelerated menus without improving gameplay",
+    "video_mode_configuration": "Restored 1280x720 after ineffective 854x480 setting test"
+  },
+  "compiler_optimization": "O3 + ThinLTO; user confirmed correct behavior but slow before detailed diagnostic build",
+  "diagnostic_build": {
+    "compiled": true,
+    "load_segments": "passed",
+    "self_integrity": "valid",
+    "guest_swap_wrapper_mapping": "verified in linked PPC function table",
+    "runtime_patch": "patches/rexglue-frame-diagnostics.patch",
+    "runtime_patch_sha256": "777a78c6c6fc5537c7a637255415e791a5f5f8ded1c05e4b1940050fd2349e95",
+    "console_readback": "passed",
+    "captured_gameplay": "user confirmed; runtime 019 produced gameplay, guest CPU, draw-phase and frame-time rows",
+    "measurements": [
+      "guest frame intervals and percentiles",
+      "graphics-thread CPU time",
+      "frame-producing thread CPU time",
+      "11 exclusive draw preparation phases",
+      "nested Vulkan playback, blocking fence wait and queue submission"
+    ],
+    "caveats": [
+      "Host measurements, not direct GPU execution timestamps.",
+      "Nested timings overlap their calling phases.",
+      "Two-second windows on different threads need not align exactly.",
+      "Instrumentation overhead has not been measured separately."
+    ],
+    "log": "gameplay-diagnostics.log",
+    "findings": "performance-findings.md"
+  },
+  "single_range_optimization": {
+    "patch": "patches/rexglue-single-range.patch",
+    "sha256": "c7427c264ba91e58eb143cbc37428629ba09c13a03ed681b431e3ae6cc8613c0",
+    "host_regression": "12000 differential cases under ASan/UBSan passed",
+    "allocation_check": "10000 resident requests: 10000 allocations before, zero after",
+    "ps5_build": "passed load-segment and SELF integrity checks",
+    "console_readback": "passed",
+    "gameplay_comparison": "User reports about the same. No material speedup established."
+  },
+  "settings_navigation": {
+    "patch": "patches/rexglue-ps5-settings-navigation.patch",
+    "sha256": "bad301487c98289a8d8c6de27b69a44f5ce6e20dbce0aefd2125231e684a0265",
+    "shortcut": "L1 + R1 + Options to open and close",
+    "controls": "D-pad navigation; Cross activates; Circle backs out of an active control",
+    "host_test": "Passed against real ImGui widgets with ASan/UBSan: navigation, checkbox activation, disconnect key release",
+    "game_input": "Settings overlay consumes guest controller input while open",
+    "ps5_build": "passed",
+    "console_readback": "passed",
+    "user_test": "pending"
+  },
+  "scheduling_diagnostics": "Command processor wait intervals and whole-process CPU time added; captures pending"
+}

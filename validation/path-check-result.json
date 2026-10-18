@@ -1,0 +1,6 @@
+{
+  "existing_game_validation": "passed",
+  "symlink_rejection": "passed",
+  "missing_destination_creation": "passed",
+  "interrupted_import": "passed"
+}

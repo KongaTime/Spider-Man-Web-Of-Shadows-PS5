@@ -1,0 +1,17 @@
+{
+  "fbo_synchronous": "black/broken picture; rejected",
+  "fsi_synchronous": "correct picture, audio, menu and gameplay reached; consistently slow",
+  "fsi_async_no_readbacks": "slight improvement reported, remains slow",
+  "guest_vsync_disabled": "menus too fast; no useful gameplay improvement; reverted to enabled",
+  "primitive_cache_min_indices_4096": "no material improvement reported",
+  "timing_samples": [
+    "WOS perf: 15.37 guest swaps/s, 65.08 ms/frame, draw 25.13 ms (3363.4 draws), copy 2.10 ms, swap 1.05 ms, buffer-end 0.73 ms, graphics-thread CPU 28.03 ms, 1280x720",
+    "WOS perf: 14.41 guest swaps/s, 69.38 ms/frame, draw 27.29 ms (3641.3 draws), copy 1.07 ms, swap 0.90 ms, buffer-end 0.76 ms, graphics-thread CPU 30.58 ms, 1280x720",
+    "WOS perf: 15.23 guest swaps/s, 65.65 ms/frame, draw 24.25 ms (3188.5 draws), copy 2.61 ms, swap 0.84 ms, buffer-end 0.69 ms, graphics-thread CPU 27.09 ms, 1280x720",
+    "WOS perf: 16.14 guest swaps/s, 61.94 ms/frame, draw 23.18 ms (3229.5 draws), copy 2.17 ms, swap 0.85 ms, buffer-end 0.68 ms, graphics-thread CPU 26.61 ms, 1280x720",
+    "WOS perf: 13.34 guest swaps/s, 74.97 ms/frame, draw 39.50 ms (4278.1 draws), copy 2.29 ms, swap 0.98 ms, buffer-end 0.80 ms, graphics-thread CPU 35.50 ms, 1280x720"
+  ],
+  "sample_note": "Host timings include backend waits and are not GPU timestamp measurements. Earlier pre-TSC instrumentation added clock-call overhead.",
+  "fbo_synchronous_dynamic_rendering_disabled_direct_resolve_disabled": "still black/broken picture; rejected, FSI restored",
+  "o3_thinlto": "User confirmed correct behavior, still slow. Detailed diagnostic capture pending."
+}

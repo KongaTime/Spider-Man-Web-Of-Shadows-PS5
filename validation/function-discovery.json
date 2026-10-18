@@ -1,0 +1,28 @@
+{
+  "executable_sha256": "3183f0beab0df589137da4430de4ac6716d281fd732b7c6b71d153140add479c",
+  "audio_vtable_leafs": [
+    {
+      "start": "0x829FE168",
+      "end": "0x829FE170"
+    },
+    {
+      "start": "0x829FE470",
+      "end": "0x829FE488"
+    }
+  ],
+  "computed_dispatch_bank": {
+    "start": "0x82431E70",
+    "end": "0x824328C0",
+    "entries": 165,
+    "new_explicit_seeds": 164,
+    "instruction_pattern": "lwz r12,0(r4); lwz r11,offset(r12); mtctr r11; bctr",
+    "every_entry_matches_pattern": true
+  },
+  "validation": "Boundaries checked against instructions from the decrypted mapped executable. Original guest instructions are compiled without replacements.",
+  "console_validation": "All three observed missing-function crash points passed. User confirms visible game picture and app stays open after X; runtime remains active.",
+  "additional_object_methods": {
+    "count": 16,
+    "pointer_tables": "0x82219F14..0x82220608",
+    "boundaries": "Checked against original PPC instructions, including original return and tail-branch endpoints."
+  }
+}

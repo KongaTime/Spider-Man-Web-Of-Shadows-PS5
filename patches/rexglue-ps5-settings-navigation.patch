@@ -1,0 +1,123 @@
+diff --git a/src/ui/imgui_drawer.cpp b/src/ui/imgui_drawer.cpp
+index f270f3c..8236a90 100644
+--- a/src/ui/imgui_drawer.cpp
++++ b/src/ui/imgui_drawer.cpp
+@@ -9,6 +9,7 @@
+  * @modified    Tom Clay, 2026 - Adapted for ReXGlue runtime
+  */
+ 
++#include <algorithm>
+ #include <cfloat>
+ #include <cstring>
+ #include <filesystem>
+@@ -21,12 +22,61 @@
+ #include <rex/ui/imgui_drawer.h>
+ #include <rex/ui/ui_event.h>
+ #include <rex/ui/window.h>
++#if REX_PLATFORM_PS5
++#include <rex/input/prospero/prospero_input_driver.h>
++#endif
+ 
+ #include <imgui.h>
+ 
+ namespace rex {
+ namespace ui {
+ 
++#if REX_PLATFORM_PS5
++namespace {
++// Read the physical pad independently of the guest-input capture callback.
++// Otherwise opening an overlay would also neutralize its own navigation.
++void UpdateProsperoGamepad(ImGuiIO& io) {
++  rex::input::X_INPUT_STATE state{};
++  const bool connected = rex::input::prospero::PollPadState(0, &state) == X_ERROR_SUCCESS;
++  io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
++  if (connected) io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
++  else io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
++  const uint16_t buttons = connected ? uint16_t(state.gamepad.buttons) : 0;
++  const auto button = [&](ImGuiKey key, uint16_t mask) {
++    io.AddKeyEvent(key, (buttons & mask) != 0);
++  };
++  using namespace rex::input;
++  button(ImGuiKey_GamepadStart, X_INPUT_GAMEPAD_START);
++  button(ImGuiKey_GamepadBack, X_INPUT_GAMEPAD_BACK);
++  button(ImGuiKey_GamepadFaceDown, X_INPUT_GAMEPAD_A);
++  button(ImGuiKey_GamepadFaceRight, X_INPUT_GAMEPAD_B);
++  button(ImGuiKey_GamepadFaceLeft, X_INPUT_GAMEPAD_X);
++  button(ImGuiKey_GamepadFaceUp, X_INPUT_GAMEPAD_Y);
++  button(ImGuiKey_GamepadDpadLeft, X_INPUT_GAMEPAD_DPAD_LEFT);
++  button(ImGuiKey_GamepadDpadRight, X_INPUT_GAMEPAD_DPAD_RIGHT);
++  button(ImGuiKey_GamepadDpadUp, X_INPUT_GAMEPAD_DPAD_UP);
++  button(ImGuiKey_GamepadDpadDown, X_INPUT_GAMEPAD_DPAD_DOWN);
++  button(ImGuiKey_GamepadL1, X_INPUT_GAMEPAD_LEFT_SHOULDER);
++  button(ImGuiKey_GamepadR1, X_INPUT_GAMEPAD_RIGHT_SHOULDER);
++  const auto analog = [&](ImGuiKey key, float value) {
++    value = connected ? std::clamp(value, 0.0f, 1.0f) : 0.0f;
++    io.AddKeyAnalogEvent(key, value > 0.1f, value);
++  };
++  analog(ImGuiKey_GamepadL2, float(state.gamepad.left_trigger) / 255.0f);
++  analog(ImGuiKey_GamepadR2, float(state.gamepad.right_trigger) / 255.0f);
++  const auto stick = [&](ImGuiKey negative, ImGuiKey positive, int16_t value) {
++    constexpr float deadzone = 8000.0f;
++    analog(negative, (-float(value) - deadzone) / (32768.0f - deadzone));
++    analog(positive, (float(value) - deadzone) / (32767.0f - deadzone));
++  };
++  stick(ImGuiKey_GamepadLStickLeft, ImGuiKey_GamepadLStickRight, int16_t(state.gamepad.thumb_lx));
++  stick(ImGuiKey_GamepadLStickDown, ImGuiKey_GamepadLStickUp, int16_t(state.gamepad.thumb_ly));
++  stick(ImGuiKey_GamepadRStickLeft, ImGuiKey_GamepadRStickRight, int16_t(state.gamepad.thumb_rx));
++  stick(ImGuiKey_GamepadRStickDown, ImGuiKey_GamepadRStickUp, int16_t(state.gamepad.thumb_ry));
++}
++}  // namespace
++#endif
++
+ // File: 'ProggyTiny.ttf' (35656 bytes)
+ // Exported using binary_to_compressed_c.cpp
+ const char kProggyTinyCompressedDataBase85[10950 + 1] =
+@@ -412,6 +462,9 @@ void ImGuiDrawer::Draw(UIDrawContext& ui_draw_context) {
+   io.DisplaySize.x = window_->GetActualPhysicalWidth() * physical_to_logical;
+   io.DisplaySize.y = window_->GetActualPhysicalHeight() * physical_to_logical;
+ 
++#if REX_PLATFORM_PS5
++  UpdateProsperoGamepad(io);
++#endif
+   ImGui::NewFrame();
+ 
+   assert_true(!IsDrawingDialogs());
+diff --git a/src/ui/overlay/settings_overlay.cpp b/src/ui/overlay/settings_overlay.cpp
+index 4ede107..6a2793d 100644
+--- a/src/ui/overlay/settings_overlay.cpp
++++ b/src/ui/overlay/settings_overlay.cpp
+@@ -240,7 +240,8 @@ void SettingsDialog::OnDraw(ImGuiIO& /*io*/) {
+             flags |= ImGuiTreeNodeFlags_Selected;
+         }
+         bool open = ImGui::TreeNodeEx(node.label.c_str(), flags);
+-        if (ImGui::IsItemClicked() && node.has_direct_entries) {
++        if ((ImGui::IsItemClicked() || (ImGui::IsItemFocused() &&
++             ImGui::IsKeyPressed(ImGuiKey_GamepadFaceDown))) && node.has_direct_entries) {
+           selected_category_ = node.full_path;
+         }
+         if (open) {
+@@ -256,7 +257,8 @@ void SettingsDialog::OnDraw(ImGuiIO& /*io*/) {
+   if (selected_category_.empty())
+     root_flags |= ImGuiTreeNodeFlags_Selected;
+   bool root_open = ImGui::TreeNodeEx(root_label.c_str(), root_flags);
+-  if (ImGui::IsItemClicked()) {
++  if (ImGui::IsItemClicked() || (ImGui::IsItemFocused() &&
++      ImGui::IsKeyPressed(ImGuiKey_GamepadFaceDown))) {
+     selected_category_.clear();
+   }
+   if (root_open) {
+diff --git a/src/ui/rex_app.cpp b/src/ui/rex_app.cpp
+index 7bd277a..ef25bbe 100644
+--- a/src/ui/rex_app.cpp
++++ b/src/ui/rex_app.cpp
+@@ -289,6 +289,10 @@ bool ReXApp::ConstructRuntime(const PathConfig& paths) {
+ 
+   if (auto* input_sys = static_cast<rex::input::InputSystem*>(runtime_->input_system())) {
+     input_sys->SetActiveCallback([this]() {
++#if REX_PLATFORM_PS5
++      // Settings navigation belongs to the overlay, including controller keys.
++      if (settings_overlay_) return false;
++#endif
+       if (window_ && !window_->HasFocus())
+         return false;
+       if (!imgui_drawer_ ||

@@ -1,0 +1,8 @@
+{
+  "source": "patches/rexglue-single-range.patch",
+  "host_regression": "passed; see single-range-host-test.json",
+  "console_build_and_readback": "passed",
+  "user_feedback": "About the same",
+  "performance": "No material gameplay improvement established; scene workload differs across log windows",
+  "retained": "Removes per-request temporary allocation while preserving residency checks and uploads"
+}

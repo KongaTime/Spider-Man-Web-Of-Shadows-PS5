@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "differential_cases": 12000,
+  "methods_under_test": "Original and modified SharedMemory::RequestRanges / RequestRange extracted from actual SDK source",
+  "compared": [
+    "return value",
+    "backing allocation requests",
+    "upload page ranges",
+    "page-validity state"
+  ],
+  "cases": [
+    "null and empty input",
+    "zero-length and out-of-bounds ranges",
+    "overlapping and full-buffer ranges",
+    "mixed valid and invalid pages",
+    "allocation and upload failure"
+  ],
+  "sanitizers": [
+    "address",
+    "undefined behavior"
+  ],
+  "resident_request_allocation_check": {
+    "requests": 10000,
+    "before": 10000,
+    "after": 0
+  },
+  "patch_sha256": "c7427c264ba91e58eb143cbc37428629ba09c13a03ed681b431e3ae6cc8613c0",
+  "limits": "Host harness substitutes allocation/upload callbacks and mutex adapter; console rendering and performance are tested separately."
+}

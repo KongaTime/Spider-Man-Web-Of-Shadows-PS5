@@ -1,0 +1,14 @@
+{
+  "files": 750,
+  "bytes": 5579143780,
+  "layout_and_executable_validation": "passed",
+  "automatic_import": "completed on PS5",
+  "resume_after_app_restart": "passed",
+  "sampled_file_sha256": {
+    "game_shared.ini": true,
+    "packs/ACT3_NOON.XEPACK": true,
+    "packs/ACT4_MEGA_VENOM.XEPACK": true
+  },
+  "game_startup": "graphics backend, shader pipeline creation, controller and AudioOut initialized",
+  "gameplay_validated": false
+}

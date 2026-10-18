@@ -1,0 +1,105 @@
+{
+  "status": "same-position camera comparison captured",
+  "user_observation": "Looking at the floor improves speed; looking up slows down",
+  "floor": [
+    {
+      "swaps_per_second": 19.38,
+      "frame_ms": 51.61,
+      "draw_ms": 7.53,
+      "draws_per_frame": 1593.2,
+      "copy_ms": 0.54,
+      "swap_ms": 0.57,
+      "buffer_end_ms": 0.44,
+      "graphics_cpu_ms": 15.69,
+      "width": 1280.0,
+      "height": 720.0
+    },
+    {
+      "swaps_per_second": 19.25,
+      "frame_ms": 51.95,
+      "draw_ms": 7.73,
+      "draws_per_frame": 1567.6,
+      "copy_ms": 0.54,
+      "swap_ms": 0.57,
+      "buffer_end_ms": 0.46,
+      "graphics_cpu_ms": 15.81,
+      "width": 1280.0,
+      "height": 720.0
+    },
+    {
+      "swaps_per_second": 18.58,
+      "frame_ms": 53.82,
+      "draw_ms": 8.19,
+      "draws_per_frame": 1526.1,
+      "copy_ms": 0.68,
+      "swap_ms": 0.59,
+      "buffer_end_ms": 0.41,
+      "graphics_cpu_ms": 15.93,
+      "width": 1280.0,
+      "height": 720.0
+    },
+    {
+      "swaps_per_second": 18.64,
+      "frame_ms": 53.64,
+      "draw_ms": 8.37,
+      "draws_per_frame": 1526.0,
+      "copy_ms": 0.64,
+      "swap_ms": 0.58,
+      "buffer_end_ms": 0.45,
+      "graphics_cpu_ms": 16.13,
+      "width": 1280.0,
+      "height": 720.0
+    }
+  ],
+  "looking_up": [
+    {
+      "swaps_per_second": 11.95,
+      "frame_ms": 83.7,
+      "draw_ms": 62.83,
+      "draws_per_frame": 7014.7,
+      "copy_ms": 1.94,
+      "swap_ms": 1.36,
+      "buffer_end_ms": 1.96,
+      "graphics_cpu_ms": 50.86,
+      "width": 1280.0,
+      "height": 720.0
+    },
+    {
+      "swaps_per_second": 12.08,
+      "frame_ms": 82.75,
+      "draw_ms": 61.54,
+      "draws_per_frame": 6569.3,
+      "copy_ms": 1.42,
+      "swap_ms": 1.33,
+      "buffer_end_ms": 2.52,
+      "graphics_cpu_ms": 49.24,
+      "width": 1280.0,
+      "height": 720.0
+    },
+    {
+      "swaps_per_second": 11.57,
+      "frame_ms": 86.46,
+      "draw_ms": 67.21,
+      "draws_per_frame": 7384.0,
+      "copy_ms": 2.56,
+      "swap_ms": 1.79,
+      "buffer_end_ms": 4.68,
+      "graphics_cpu_ms": 52.52,
+      "width": 1280.0,
+      "height": 720.0
+    },
+    {
+      "swaps_per_second": 11.42,
+      "frame_ms": 87.54,
+      "draw_ms": 67.74,
+      "draws_per_frame": 7384.0,
+      "copy_ms": 2.34,
+      "swap_ms": 1.44,
+      "buffer_end_ms": 4.63,
+      "graphics_cpu_ms": 53.43,
+      "width": 1280.0,
+      "height": 720.0
+    }
+  ],
+  "inference": "Visible scene complexity substantially increases both draw count and measured host graphics preparation; GPU execution has not been directly measured."
+}

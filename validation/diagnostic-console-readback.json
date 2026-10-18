@@ -1,0 +1,42 @@
+{
+  "eboot.bin": {
+    "bytes": 105443120,
+    "sha256": "1f640851405d91af7555ddcb907e9806fae9e8b4d4f1b57a186387471601628f",
+    "format": "extracted-without-version-trailer"
+  },
+  "sce_module/libc.prx": {
+    "bytes": 1335962,
+    "sha256": "7e82ce9a4259d0db815e7e734ed49afd7bd4aaf33beaefa968ba6d1ff8a8b315",
+    "format": "extracted-without-version-trailer"
+  },
+  "sce_sys/param.json": {
+    "bytes": 803,
+    "sha256": "d7488c0f43ad64740b650ce106f2a5a05687675e30bf2f0347ecd6c3e9b48be3",
+    "format": "signed"
+  },
+  "dependencies.lock.json": {
+    "bytes": 1646,
+    "sha256": "80dbeda6dc51ecf82f9fd1b35a6e37c0b8c8bcb949a24ffb93381c5f4d63184b",
+    "format": "signed"
+  },
+  "LEGAL.txt": {
+    "bytes": 557,
+    "sha256": "727b523582a545d6ec3b7bed49f437c87c71cbf946043db542465005441569c6",
+    "format": "signed"
+  },
+  "licenses/components.json": {
+    "bytes": 6906,
+    "sha256": "110ca709097d16c40e93af4e23525ad13292142d60e0f07e25b5caec7aee1858",
+    "format": "signed"
+  },
+  "licenses/rexglue-frame-diagnostics.patch": {
+    "bytes": 8671,
+    "sha256": "777a78c6c6fc5537c7a637255415e791a5f5f8ded1c05e4b1940050fd2349e95",
+    "format": "signed"
+  },
+  "licenses/title/3-LICENSE": {
+    "bytes": 1659,
+    "sha256": "8e065be1da2ff9a16b1f063d4636d8b67e6a654bb90583ea4332e66ac421bb18",
+    "format": "signed"
+  }
+}

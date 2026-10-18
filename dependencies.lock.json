@@ -1,0 +1,48 @@
+[
+  {
+    "name": "EdgeOfTimeRecomp",
+    "source": "https://github.com/KongaTime/EdgeOfTimeRecomp.git",
+    "commit": "af29acadd32ccb83a87ee989f422317057146567"
+  },
+  {
+    "name": "PS5_EdgeOfTimeTitle",
+    "source": "https://github.com/KongaTime/PS5_EdgeOfTimeTitle.git",
+    "commit": "34482e7c49d26ec14a800a05e3ec4144d63a4aa5"
+  },
+  {
+    "name": "PS5_Mesa",
+    "source": "https://github.com/KongaTime/PS5_Mesa.git",
+    "commit": "7b59ef27c1b09b9671bc4153c41940c3155c3af2",
+    "checkout_commit": "b3588f78dd7fd46fbadc7ecd487e5f14d4213e4b"
+  },
+  {
+    "name": "PS5_PayloadSDK",
+    "source": "https://github.com/KongaTime/PS5_PayloadSDK.git",
+    "commit": "1de8b37d583de476ad07cde9a0d562b75fb1be8f",
+    "radv_header_commit": "b83202be73e930050e00de0f1b4d9ec46c0391bf"
+  },
+  {
+    "name": "PS5_Vulkan",
+    "source": "https://github.com/KongaTime/PS5_Vulkan.git",
+    "commit": "5b5e4fc2d80fdb67a4f61ba9e6a8a424026bb8a5"
+  },
+  {
+    "name": "rexglue-sdk",
+    "source": "https://github.com/KongaTime/rexglue-sdk.git",
+    "commit": "f47ccdde34b3a992f7872a27619fc588040c229f",
+    "local_patches": ["patches/rexglue-frame-diagnostics.patch", "patches/rexglue-single-range.patch", "patches/rexglue-ps5-settings-navigation.patch"]
+  },
+  {
+    "name": "WebOfShadowsRecomp",
+    "source": "https://github.com/toowasmir/WebOfShadowsRecomp.git",
+    "commit": "7cf9000d5c2d86a01311a0a8d2a3de26cd5c7607"
+  },
+  {
+    "name": "rexglue-codegen",
+    "source": "https://github.com/rexglue/rexglue-sdk",
+    "release": "nightly-20261002-bd833a2a",
+    "sha256": "0a56565221a4e75f91fc71f787d9299a0d0298127b970c8a88a292f8d3a3befe",
+    "platform": "linux-amd64",
+    "format": "zip"
+  }
+]
