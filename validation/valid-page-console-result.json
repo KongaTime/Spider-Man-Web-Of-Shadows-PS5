@@ -1,0 +1,85 @@
+{
+  "runtime_log": "wos_recomp_029.log",
+  "status": "picture-correct-speed-improvement-inconclusive",
+  "user_observation": "Picture correct; cannot tell whether it is slightly faster",
+  "sample_context": "Last 12 approximately two-second guest timing windows captured after user gameplay report",
+  "window_count": 12,
+  "guest_swaps_per_second": {
+    "minimum": 15.86,
+    "maximum": 17.55,
+    "mean_of_reported_windows": 16.7275
+  },
+  "samples": [
+    {
+      "guest_swaps_per_second": 16.73,
+      "frame_ms": 59.78,
+      "calling_thread_cpu_ms": 15.68
+    },
+    {
+      "guest_swaps_per_second": 15.86,
+      "frame_ms": 63.06,
+      "calling_thread_cpu_ms": 16.6
+    },
+    {
+      "guest_swaps_per_second": 16.03,
+      "frame_ms": 62.39,
+      "calling_thread_cpu_ms": 16.18
+    },
+    {
+      "guest_swaps_per_second": 16.84,
+      "frame_ms": 59.38,
+      "calling_thread_cpu_ms": 15.13
+    },
+    {
+      "guest_swaps_per_second": 16.52,
+      "frame_ms": 60.54,
+      "calling_thread_cpu_ms": 15.24
+    },
+    {
+      "guest_swaps_per_second": 16.56,
+      "frame_ms": 60.38,
+      "calling_thread_cpu_ms": 15.38
+    },
+    {
+      "guest_swaps_per_second": 16.49,
+      "frame_ms": 60.65,
+      "calling_thread_cpu_ms": 15.02
+    },
+    {
+      "guest_swaps_per_second": 17.25,
+      "frame_ms": 57.98,
+      "calling_thread_cpu_ms": 15.08
+    },
+    {
+      "guest_swaps_per_second": 17.55,
+      "frame_ms": 56.99,
+      "calling_thread_cpu_ms": 14.59
+    },
+    {
+      "guest_swaps_per_second": 17.54,
+      "frame_ms": 57.01,
+      "calling_thread_cpu_ms": 14.92
+    },
+    {
+      "guest_swaps_per_second": 17.44,
+      "frame_ms": 57.35,
+      "calling_thread_cpu_ms": 15.94
+    },
+    {
+      "guest_swaps_per_second": 15.92,
+      "frame_ms": 62.81,
+      "calling_thread_cpu_ms": 17.23
+    }
+  ],
+  "configuration_preserved": true,
+  "executable_readback": "passed: canonical ELF match except non-loadable module-version trailer omitted by FTP",
+  "errors_or_critical_rows": 0,
+  "logging": "info; prior supplied runtime 027 used trace logging",
+  "comparison_limits": [
+    "Camera, scene and simulation state are not identical to the earlier capture.",
+    "Logging level differs, so a gain cannot be attributed to the validity fast path alone.",
+    "Guest swap rates are game update rates, not independently measured television presentation rates.",
+    "No direct GPU execution timings were collected."
+  ],
+  "conclusion": "Build works in opening gameplay; no controlled performance gain established."
+}

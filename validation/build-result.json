@@ -96,5 +96,5 @@
   },
   "scheduling_diagnostics": "Command processor wait intervals and whole-process CPU time added; captures pending",
   "artifacts_scope": "Previously deployed settings-navigation build; see valid-page-fast-path.json for current local candidate",
-  "latest_local_candidate": "valid-page-fast-path.json; console test pending"
+  "latest_local_candidate": "valid-page-fast-path.json; console picture confirmed, speed improvement inconclusive"
 }

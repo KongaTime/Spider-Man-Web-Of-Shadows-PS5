@@ -72,8 +72,10 @@ lock. All runtime validity-word reads and writes use compiler atomics on PS5;
 invalid pages retain the existing locked upload path. This passed 12,000
 differential cases, 1,000 invalidation/revalidation cycles and an atomic
 publication stress check under host address/undefined-behavior sanitizers.
-In the harness, 10,000 resident requests took zero global locks. Console speed
-and picture correctness have not yet been tested for this change. See
+In the harness, 10,000 resident requests took zero global locks. The user
+confirmed correct graphics in opening gameplay. The captured tail runs at
+15.86–17.55 guest swaps/second; the user could not tell whether it was faster.
+Camera and logging differences prevent attributing a speed gain to this patch. See
 `validation/repository-performance-review.md` for the log review and limitations.
 
 PS5 settings open and close with **L1 + R1 + Options**. The touchpad is mapped

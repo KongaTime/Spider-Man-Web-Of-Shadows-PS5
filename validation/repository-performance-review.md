@@ -62,8 +62,15 @@ source and comparing the resulting files with the runtime checkout. This
 handles overlapping timing and residency patches without skipping validation.
 
 PS5 runtime compilation passed. The title build result and artifact hash are
-recorded separately in `valid-page-fast-path.json`. Console picture correctness
-and frame-rate benefit remain untested. No speedup percentage is claimed.
+recorded separately in `valid-page-fast-path.json`. The deployed executable
+passed readback verification and the original settings were preserved. The user
+confirmed correct graphics in opening gameplay but could not tell whether it
+was slightly faster. The last 12 guest timing windows report 15.86–17.55
+swaps/second, averaging 16.73 across reported windows, with no error or
+critical rows in the capture. Runtime 029 uses info logging, unlike the supplied
+trace-level runtime 027. Scene/camera and logging differences make this an
+uncontrolled comparison; no patch-specific gain or speedup percentage is
+established. See `valid-page-console-result.json` for the sanitized samples.
 
 The next useful comparison is the same stationary street-facing camera view,
 with the same settings and info-level logging, before and after this patch.

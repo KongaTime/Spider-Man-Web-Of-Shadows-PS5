@@ -1,5 +1,5 @@
 {
-  "status": "host-tests-and-native-build-passed-console-test-pending",
+  "status": "console-picture-confirmed-speed-improvement-inconclusive",
   "reference": {
     "repository": "KongaTime/TheSimpsonsGame-PS5-Builder",
     "file": "tools/rexglue-sdk/src/graphics/shared_memory.cpp",
@@ -32,9 +32,25 @@
     "diagnostics": "Per-draw timing guards retained, off by default; guest-swap timing retained"
   },
   "console": {
-    "deployed_this_candidate": false,
-    "picture_test": "pending",
-    "speed_comparison": "pending"
+    "deployed_this_candidate": true,
+    "picture_test": "passed: user confirmed picture correct in gameplay",
+    "speed_comparison": "inconclusive; user cannot tell whether slightly faster",
+    "executable_readback": {
+      "bytes": 105441656,
+      "sha256": "587fc9ee0d663388a9f9491edc27236b23c17f1d3ab2ae662380db8e3873649e",
+      "format": "extracted-without-version-trailer"
+    },
+    "settings_preserved": true,
+    "launch": "running, appid 0xa018",
+    "runtime_log": "wos_recomp_029.log",
+    "log_levels": {
+      "info": 508,
+      "warning": 11
+    },
+    "captured_guest_timing_windows": 35,
+    "sample_context": "Last 12 approximately two-second guest timing windows captured after user gameplay report",
+    "result": "valid-page-console-result.json",
+    "errors_or_critical_rows": 0
   },
   "source_patch_chain_check": "passed: replayed pinned source patches match current SDK files"
 }
