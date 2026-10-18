@@ -39,7 +39,8 @@
       "patches/rexglue-coarse-frame-costs.patch",
       "patches/rexglue-texture-descriptor-reuse.patch",
       "patches/rexglue-command-wait-breakdown.patch",
-      "patches/rexglue-command-ring-wait.patch"
+      "patches/rexglue-command-ring-wait.patch",
+      "patches/rexglue-zero-delay-priority.patch"
     ],
     "valid_page_fast_path_reference": {
       "source": "https://github.com/KongaTime/TheSimpsonsGame-PS5-Builder/blob/main/tools/rexglue-sdk/src/graphics/shared_memory.cpp",

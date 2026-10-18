@@ -134,6 +134,14 @@ checks the unstripped linked ELF against the private generated import table
 to verify that game calls actually reach all seven wrappers. No generated
 game source is included in this repository.
 
+Apply `patches/rexglue-zero-delay-priority.patch` and rebuild `rexruntime`
+for the zero-duration delay correction. The old code compared a stored guest
+priority increment against host priority constants. On PS5, normal guest
+increment 0 compared below host `kBelowNormal` (8), causing a 100 µs sleep.
+The corrected check uses the same guest range as `SetPriority`. Delays that
+convert to at least 1 ms, and alertable waits, retain their existing handling. The extracted methods passed
+720 host sanitizer cases; the console performance result is pending.
+
 Deploy the complete title folder, including `sce_sys/icon0.png`, before
 publishing `sce_sys/param.json` to the loader. An initial missing icon can
 exhaust ShadowMountPlus's registration retries and require a fresh scan with

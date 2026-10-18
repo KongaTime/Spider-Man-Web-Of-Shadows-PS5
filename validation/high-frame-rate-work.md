@@ -152,6 +152,32 @@ checks forwarding, context changes, units, report reset and startup discard.
 point at the corresponding wrappers. Neither test substitutes for console
 timing measurements. No waits or game timing behavior are removed.
 
+Runtime 034's street-facing capture measured 16.58–16.65 guest swaps/second
+in its final windows. The swapping thread spent about 36.7–36.9 ms/frame in
+KeDelayExecutionThread (188–189 calls/frame), and 11.1–11.2 ms/frame in
+NtWaitForSingleObjectEx (about 8,430–8,445 calls/frame). Critical-section entry
+was 0.00 ms at displayed precision. These are host wall intervals, including
+overhead and any scheduling time; they do not establish the purpose of each
+wait. Calling-thread CPU remained about 14.4–14.7 ms/frame.
+
+## Zero-duration delay priority correction
+
+Inspection found that `XThread::priority_` stores a guest priority increment,
+while `Delay` compared it directly with the host `ThreadPriority::kBelowNormal`.
+The POSIX host constant is +8, so a normal guest increment of 0 incorrectly
+took the 100 µs sleep path for non-alertable delays that convert to zero ms.
+`SetPriority` classifies increments below -0x11 as below normal; the correction
+uses that same range. This retains the existing low-priority backoff, delays
+that convert to at least 1 ms, and alertable delays. It does not bypass game synchronization or alter the
+guest clock/vblank rate.
+
+`tools/test-zero-delay-priority.py` extracts both actual SDK methods. Under
+ASan/UBSan, 720 cases covered priority boundaries, zero/sub-ms/nonzero delays,
+duration scaling, alertable completion/APCs and termination checks, using
+recorded mock sleep/yield calls. These checks establish the branch behavior;
+the runtime 034 totals alone do not prove all delay calls used the faulty
+branch, and no console speedup from this correction is claimed yet.
+
 ## High-frame-rate timing constraints
 
 Disabling the existing `vsync` option already made menus run too fast without

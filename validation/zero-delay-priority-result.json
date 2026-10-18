@@ -1,0 +1,30 @@
+{
+  "status": "built-deployed-launched-awaiting-gameplay-comparison",
+  "target_more_than_60_game_frames_per_second": "not achieved",
+  "patch": "patches/rexglue-zero-delay-priority.patch",
+  "change": "Classify stored guest priority increments using the same below-normal boundary as SetPriority instead of comparing to POSIX host priority constant +8",
+  "scope": "Non-alertable delays converted to zero milliseconds; delays converted to at least 1 ms and alertable handling retained",
+  "host_tests": "720 actual Delay/SetPriority cases under ASan/UBSan passed: boundaries, zero/sub-ms/timed/scaled delays, alertable results and termination checks",
+  "native": {
+    "runtime_compile": "passed",
+    "title_link": "passed",
+    "self_integrity": "valid",
+    "load_segments": "five valid nonoverlapping load segments",
+    "signed_eboot_bytes": 102719821,
+    "signed_eboot_sha256": "5dfeb10ff21f2d9c5f10253726ed20b1605f2a207177f4d6e23aaf58285d5bbe",
+    "executable_readback": {
+      "bytes": 105495672,
+      "sha256": "2e3af091ba50a09ff7da71e94bbc42c73a5bd8fe214dde881eb4dcc5e038f565",
+      "format": "extracted-without-version-trailer"
+    }
+  },
+  "comparison": {
+    "diagnostics_enabled": true,
+    "texture_descriptor_reuse_enabled": true,
+    "command_ring_spin_limit": 16,
+    "settings_bytes_preserved": true,
+    "baseline": "guest-wait-probe-result.json and coarse-guest-waits.json; runtime 034",
+    "gameplay_capture": "pending"
+  },
+  "limits": "Host tests establish branch behavior, not PS5 performance. Baseline aggregate delay totals do not establish how many calls used the corrected branch. Console comparison required."
+}

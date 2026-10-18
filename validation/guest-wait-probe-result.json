@@ -1,5 +1,5 @@
 {
-  "status": "built-deployed-launched-awaiting-user-gameplay-capture",
+  "status": "console-gameplay-captured-delay-and-polling-costs-identified",
   "purpose": "Measure wait intervals and call counts on the thread calling VdSwap",
   "behavior": "Forward each original HLE call exactly once with the same PPC context and guest memory; no wait removal",
   "host_tests": "ASan/UBSan passed with diagnostics ON and OFF: forwarding, context changes, timing units, reset and startup discard",
@@ -18,7 +18,50 @@
   },
   "console": {
     "launched": true,
-    "gameplay_capture": "pending"
+    "gameplay_capture": "user confirmed in gameplay facing the street",
+    "runtime_log": "wos_recomp_034.log",
+    "log_levels": {
+      "info": 1951,
+      "warning": 11
+    },
+    "representative_tail": {
+      "guest_swaps_per_second": "16.58-16.65",
+      "wall_ms_per_frame": "60.07-60.33",
+      "calling_thread_cpu_ms_per_frame": "14.39-14.71",
+      "thread_delay_ms_per_frame": "36.67-36.89",
+      "thread_delay_calls_per_frame": "188.2-189.3",
+      "nt_single_wait_ms_per_frame": "11.13-11.22",
+      "nt_single_wait_calls_per_frame": "8429.9-8444.9",
+      "critical_section_ms_per_frame": "0.00 at displayed precision"
+    },
+    "tail_diagnostics": [
+      "WOS guest perf: 17.35 swaps/s, 57.62 ms/frame, calling-thread CPU 13.97 ms, VdSwap 0.00 ms",
+      "WOS guest waits ms/frame: KeSingle 0.00, KeMultiple 0.00, NtSingle 10.97, NtMultiple 0.00, delay 35.24, critical-section 0.00",
+      "WOS guest wait calls/frame: KeSingle 0.0, KeMultiple 0.0, NtSingle 8799.4, NtMultiple 0.0, delay 181.1, critical-section 2.5",
+      "WOS coarse perf: 17.18 swaps/s, 58.21 ms/frame, graphics-thread CPU 29.18 ms/frame, draws 5840.7, query ends 0.0, queue submits 3.2",
+      "WOS coarse nested ms/frame: draw 18.50, primitives 0.63, bindings 6.51, residency 0.83, query-end 0.00, fence-wait 0.00, playback 1.81, queue-submit 0.17",
+      "WOS texture descriptors/frame: reused 3745.6, written 1335.8",
+      "WOS extra nested ms/frame: swap 1.20, copy 2.60, fence-check-and-reclaim 0.02",
+      "WOS command waits ms/frame: ring-empty 29.88 (CPU 3.58), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.2, packets 98.3, sleeps 0.0, coherency 76.3",
+      "WOS guest perf: 16.58 swaps/s, 60.33 ms/frame, calling-thread CPU 14.71 ms, VdSwap 0.00 ms",
+      "WOS guest waits ms/frame: KeSingle 0.00, KeMultiple 0.00, NtSingle 11.22, NtMultiple 0.00, delay 36.67, critical-section 0.00",
+      "WOS guest wait calls/frame: KeSingle 0.0, KeMultiple 0.0, NtSingle 8444.9, NtMultiple 0.0, delay 188.2, critical-section 2.3",
+      "WOS coarse perf: 16.53 swaps/s, 60.49 ms/frame, graphics-thread CPU 33.84 ms/frame, draws 7405.0, query ends 0.0, queue submits 3.3",
+      "WOS coarse nested ms/frame: draw 22.96, primitives 0.74, bindings 7.62, residency 1.00, query-end 0.00, fence-wait 0.00, playback 1.92, queue-submit 0.69",
+      "WOS texture descriptors/frame: reused 5413.3, written 1231.2",
+      "WOS extra nested ms/frame: swap 1.23, copy 3.32, fence-check-and-reclaim 0.02",
+      "WOS command waits ms/frame: ring-empty 25.65 (CPU 3.13), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.4, packets 98.7, sleeps 0.0, coherency 76.7",
+      "WOS guest perf: 16.65 swaps/s, 60.07 ms/frame, calling-thread CPU 14.39 ms, VdSwap 0.00 ms",
+      "WOS guest waits ms/frame: KeSingle 0.00, KeMultiple 0.00, NtSingle 11.13, NtMultiple 0.00, delay 36.89, critical-section 0.00",
+      "WOS guest wait calls/frame: KeSingle 0.0, KeMultiple 0.0, NtSingle 8429.9, NtMultiple 0.0, delay 189.3, critical-section 2.2",
+      "WOS coarse perf: 16.44 swaps/s, 60.81 ms/frame, graphics-thread CPU 32.57 ms/frame, draws 6836.0, query ends 0.0, queue submits 3.3",
+      "WOS coarse nested ms/frame: draw 21.99, primitives 0.67, bindings 7.31, residency 0.96, query-end 0.00, fence-wait 0.00, playback 1.88, queue-submit 0.35",
+      "WOS texture descriptors/frame: reused 4806.7, written 1244.7",
+      "WOS extra nested ms/frame: swap 1.14, copy 3.58, fence-check-and-reclaim 0.02",
+      "WOS command waits ms/frame: ring-empty 27.41 (CPU 3.20), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.3, packets 99.1, sleeps 0.0, coherency 77.1"
+    ]
   },
-  "limits": "Wall intervals can overlap; only the swapping thread is reported. Object identity and other threads are not measured."
+  "limits": "Wall intervals can overlap; only the swapping thread is reported. Object identity and other threads are not measured.",
+  "findings": "High-frequency delays and object waits account for much of the swapping thread wall interval. Source inspection found a guest/host priority-scale mismatch in zero-duration Delay. Its contribution requires a corrected-build console comparison.",
+  "target_more_than_60_game_frames_per_second": "not achieved"
 }

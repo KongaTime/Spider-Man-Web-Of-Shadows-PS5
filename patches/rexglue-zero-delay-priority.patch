@@ -1,0 +1,15 @@
+diff --git a/src/system/xthread.cpp b/src/system/xthread.cpp
+--- a/src/system/xthread.cpp
++++ b/src/system/xthread.cpp
+@@ -1033,7 +1033,10 @@
+     }
+   } else {
+     if (timeout_ms == 0) {
+-      if (priority_ <= rex::thread::ThreadPriority::kBelowNormal) {
++      // priority_ stores the guest increment, not a host ThreadPriority value.
++      // Match SetPriority's below-normal range; POSIX kBelowNormal is +8,
++      // which would incorrectly sleep even for the normal guest increment 0.
++      if (priority_ < -0x11) {
+         rex::thread::Sleep(std::chrono::microseconds(100));
+       } else {
+         rex::thread::MaybeYield();

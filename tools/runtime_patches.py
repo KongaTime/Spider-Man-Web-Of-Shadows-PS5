@@ -7,6 +7,7 @@ import tempfile
 def verified_runtime_patches(checkout, patch_dir):
     checkout, patch_dir = Path(checkout), Path(patch_dir)
     groups = [
+        (['src/system/xthread.cpp'], [['rexglue-zero-delay-priority.patch'], []]),
         (['src/graphics/shared_memory.cpp'], [
             ['rexglue-single-range.patch', 'rexglue-valid-page-fast-path.patch']]),
         (['src/ui/imgui_drawer.cpp', 'src/ui/overlay/settings_overlay.cpp',
