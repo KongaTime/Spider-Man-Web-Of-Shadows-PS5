@@ -1,0 +1,155 @@
+diff --git a/include/private/vkd3d_common.h b/include/private/vkd3d_common.h
+index d6035b9..96a99eb 100644
+--- a/include/private/vkd3d_common.h
++++ b/include/private/vkd3d_common.h
+@@ -327,7 +327,11 @@ static inline uint64_t vkd3d_get_current_time_ns(void)
+     return whole + part;
+ #else
+     struct timespec ts;
++#ifdef __PROSPERO__
++    clock_gettime(CLOCK_MONOTONIC, &ts);
++#else
+     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
++#endif
+     return ts.tv_sec * 1000000000ll + ts.tv_nsec;
+ #endif
+ }
+diff --git a/include/private/vkd3d_native_sync_handle.h b/include/private/vkd3d_native_sync_handle.h
+index 1e5eb62..eb1e421 100644
+--- a/include/private/vkd3d_native_sync_handle.h
++++ b/include/private/vkd3d_native_sync_handle.h
+@@ -26,6 +26,9 @@ enum vkd3d_native_sync_handle_type
+     VKD3D_NATIVE_SYNC_HANDLE_TYPE_SEMAPHORE = 2,
+ };
+ 
++#if defined(__PROSPERO__)
++#include "vkd3d_ps5_sync.h"
++#else
+ #ifdef _WIN32
+ typedef struct { HANDLE handle; enum vkd3d_native_sync_handle_type type; } vkd3d_native_sync_handle;
+ #else
+@@ -197,4 +200,5 @@ static inline void vkd3d_native_sync_handle_destroy(vkd3d_native_sync_handle han
+     }
+ }
+ 
++#endif /* native sync platform */
+ #endif
+diff --git a/include/private/vkd3d_threads.h b/include/private/vkd3d_threads.h
+index 98ea074..0287520 100644
+--- a/include/private/vkd3d_threads.h
++++ b/include/private/vkd3d_threads.h
+@@ -301,10 +301,17 @@ static inline void pthread_once(pthread_once_t *once, void (*func)(void))
+ #include <pthread.h>
+ #include <errno.h>
+ #include <time.h>
++#if defined(__PROSPERO__)
++#include <pthread_np.h>
++#endif
+ 
+ static inline void vkd3d_set_thread_name(const char *name)
+ {
++#if defined(__PROSPERO__)
++    pthread_set_name_np(pthread_self(), name);
++#else
+     pthread_setname_np(pthread_self(), name);
++#endif
+ }
+ 
+ typedef struct rwlock
+diff --git a/include/vkd3d_sonames.h b/include/vkd3d_sonames.h
+index fd32ba4..7075a84 100644
+--- a/include/vkd3d_sonames.h
++++ b/include/vkd3d_sonames.h
+@@ -30,6 +30,10 @@
+ #elif defined(__linux__)
+ #define SONAME_LIBVULKAN "libvulkan.so.1"
+ #define SONAME_D3D12CORE "libvkd3d-proton-d3d12core.so"
++#elif defined(__PROSPERO__)
++/* Native PS5 callers must supply pfn_vkGetInstanceProcAddr directly. */
++#define SONAME_LIBVULKAN "static-radv-direct-entrypoint-required"
++#define SONAME_D3D12CORE "native-static-vkd3d-required"
+ #elif defined(__APPLE__)
+ #define SONAME_LIBVULKAN "libvulkan.1.dylib"
+ #define SONAME_D3D12CORE "vkd3d-proton-d3d12core.dylib"
+diff --git a/include/vkd3d_windows.h b/include/vkd3d_windows.h
+index 0907068..2ad6915 100644
+--- a/include/vkd3d_windows.h
++++ b/include/vkd3d_windows.h
+@@ -92,8 +92,13 @@ typedef void *HANDLE;
+ typedef const CHAR* LPCSTR;
+ typedef const WCHAR* LPCWSTR;
+ 
++#ifdef __PROSPERO__
++#define _fseeki64(a, b, c) fseeko(a, b, c)
++#define _ftelli64(a) ftello(a)
++#else
+ #define _fseeki64(a, b, c) fseeko64(a, b, c)
+ #define _ftelli64(a) ftello64(a)
++#endif
+ 
+ /* GUID */
+ # ifdef __WIDL__
+diff --git a/libs/vkd3d-common/file_utils.c b/libs/vkd3d-common/file_utils.c
+index 2eb31fd..4e2f6f7 100644
+--- a/libs/vkd3d-common/file_utils.c
++++ b/libs/vkd3d-common/file_utils.c
+@@ -64,9 +64,17 @@ bool vkd3d_file_rename_no_replace(const char *from_path, const char *to_path)
+     if (!MoveFileA(from_path, to_path))
+         code = GetLastError();
+     return code == ERROR_SUCCESS;
++#else
++#ifdef __PROSPERO__
++    /* Cache files share a directory/filesystem. link() atomically fails if the
++     * destination exists; never use a check-then-rename race. */
++    if (link(from_path, to_path)) return false;
++    unlink(from_path);
++    return true;
+ #else
+     return renameat2(AT_FDCWD, from_path, AT_FDCWD, to_path, RENAME_NOREPLACE) == 0;
+ #endif
++#endif
+ }
+ 
+ bool vkd3d_file_delete(const char *path)
+diff --git a/libs/vkd3d/queue_timeline.c b/libs/vkd3d/queue_timeline.c
+index 90aebf3..9bd15fb 100644
+--- a/libs/vkd3d/queue_timeline.c
++++ b/libs/vkd3d/queue_timeline.c
+@@ -153,6 +153,9 @@ vkd3d_queue_timeline_trace_register_event_signal(struct vkd3d_queue_timeline_tra
+ #ifdef _WIN32
+     snprintf(state->desc, sizeof(state->desc), "event: %p, fence: %p, value %"PRIu64,
+             handle.handle, (void*)fence, value);
++#elif defined(__PROSPERO__)
++    snprintf(state->desc, sizeof(state->desc), "event: %p, fence: %p, value %"PRIu64,
++            (void*)handle.event, (void*)fence, value);
+ #else
+     snprintf(state->desc, sizeof(state->desc), "event: %d, fence: %p, value %"PRIu64,
+             handle.fd, (void*)fence, value);
+diff --git a/libs/vkd3d/swapchain.c b/libs/vkd3d/swapchain.c
+index 4d3e1bf..07867db 100644
+--- a/libs/vkd3d/swapchain.c
++++ b/libs/vkd3d/swapchain.c
+@@ -735,6 +735,9 @@ static HANDLE STDMETHODCALLTYPE dxgi_vk_swap_chain_GetFrameLatencyEvent(IDXGIVkS
+         ERR("Failed to duplicate waitable handle.\n");
+         return NULL;
+     }
++#elif defined(__PROSPERO__)
++    FIXME("DXGI waitable-handle duplication is not implemented for native PS5.\n");
++    duplicated_handle = NULL;
+ #else
+     /* Ensure that we don't return fd 0 which would confuse the caller. */
+     fd = dup(swapchain->frame_latency_event.fd);
+diff --git a/meson.build b/meson.build
+index 2f7dbcc..a19771f 100644
+--- a/meson.build
++++ b/meson.build
+@@ -92,6 +92,9 @@ threads_dep = dependency('threads')
+ if vkd3d_platform == 'linux' or vkd3d_platform == 'android'
+   lib_dl           = vkd3d_compiler.find_library('dl')
+   vkd3d_extra_libs = [ lib_dl, threads_dep ]
++elif vkd3d_platform == 'freebsd'
++  lib_dl = declare_dependency()
++  vkd3d_extra_libs = [ threads_dep ]
+ elif vkd3d_platform == 'windows'
+   lib_dxgi         = vkd3d_compiler.find_library('dxgi')
+   lib_gdi32        = vkd3d_compiler.find_library('gdi32')

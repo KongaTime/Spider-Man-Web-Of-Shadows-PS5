@@ -269,3 +269,20 @@ refresh. Porting that mechanism alone would not establish more than 60 actual
 game updates per second. The game-specific frame limiter and timing-dependent
 logic still need to be identified and tested after renderer throughput allows
 higher rates. No game-speed or refresh-clock multiplier has been applied here.
+
+## Separate native D3D12 prototype
+
+The `prototypes/d3d12` experiment ports a pinned vkd3d-proton static library to
+the PS5 payload SDK and supplies the existing RADV driver's entry point
+directly. PPSA99302 probe 004 passes D3D12 device creation, reports ROV support
+and resource binding tier 3, copies 1,024 GPU words exactly, and reads the
+expected value from all sixteen pixels after ten overlapping ROV instances.
+It also presents 240 D3D12-written images through native Vulkan/VideoOut and
+checks the last swapchain pixel: BGRA 153,151,13,255, exactly as expected.
+
+The test serializes each frame and is not a gameplay benchmark. No game data,
+main executable or console TOML is changed. FTP readback of PPSA99301's
+normalized ELF still matches the previously verified runtime 037 hash. The
+native display mode selected for the probe is 3840×2160 at 59.94 Hz; it does
+not establish 120 Hz capability. This is a compatibility starting point;
+the WoS D3D12 backend is not yet integrated or shown to be faster.

@@ -1,0 +1,43 @@
+D3D12 native device probe 004; vkd3d-proton static + PS5 RADV
+vkd3d_create_device(&info, &IID_ID3D12Device, (void **)&device)=00000000
+ID3D12Device_CheckFeatureSupport(device, D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options))=00000000
+D3D12 options ROVsSupported=1 ResourceBindingTier=3
+ID3D12Device_CreateCommandQueue(device, &queue_desc, &IID_ID3D12CommandQueue, (void **)&queue)=00000000
+ID3D12Device_CreateCommandAllocator(device, D3D12_COMMAND_LIST_TYPE_DIRECT, &IID_ID3D12CommandAllocator, (void **)&allocator)=00000000
+ID3D12Device_CreateCommandList(device, 0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator, NULL, &IID_ID3D12GraphicsCommandList, (void **)&list)=00000000
+ID3D12Device_CreateCommittedResource(device, &heap, D3D12_HEAP_FLAG_NONE, &resource, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, &IID_ID3D12Resource, (void **)&source)=00000000
+ID3D12Device_CreateCommittedResource(device, &heap, D3D12_HEAP_FLAG_NONE, &resource, D3D12_RESOURCE_STATE_COPY_DEST, NULL, &IID_ID3D12Resource, (void **)&destination)=00000000
+ID3D12Resource_Map(source, 0, &empty, (void **)&mapped)=00000000
+ID3D12GraphicsCommandList_Close(list)=00000000
+ID3D12Device_CreateFence(device, 0, D3D12_FENCE_FLAG_NONE, &IID_ID3D12Fence, (void **)&fence)=00000000
+ID3D12CommandQueue_Signal(queue, fence, 1)=00000000
+ID3D12Resource_Map(destination, 0, &full, (void **)&mapped)=00000000
+D3D12_GPU_COPY checked_words=1024 mismatches=0
+ID3D12Device_CreateCommandQueue(device, &qd, &IID_ID3D12CommandQueue, (void **)&queue)=00000000
+ID3D12Device_CreateCommandAllocator(device, D3D12_COMMAND_LIST_TYPE_DIRECT, &IID_ID3D12CommandAllocator, (void **)&allocator)=00000000
+ID3D12Device_CreateCommandList(device, 0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator, NULL, &IID_ID3D12GraphicsCommandList, (void **)&list)=00000000
+vkd3d_serialize_root_signature(&rs, D3D_ROOT_SIGNATURE_VERSION_1_0, &blob, NULL)=00000000
+ID3D12Device_CreateRootSignature(device, 0, ID3D10Blob_GetBufferPointer(blob), ID3D10Blob_GetBufferSize(blob), &IID_ID3D12RootSignature, (void **)&signature)=00000000
+ID3D12Device_CreateGraphicsPipelineState(device, &pd, &IID_ID3D12PipelineState, (void **)&pipeline)=00000000
+ID3D12Device_CreateCommittedResource(device, &hp, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, NULL, &IID_ID3D12Resource, (void **)&texture)=00000000
+ID3D12Device_CreateDescriptorHeap(device, &hd, &IID_ID3D12DescriptorHeap, (void **)&descriptors)=00000000
+ID3D12Device_CreateCommittedResource(device, &hp, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_COPY_DEST, NULL, &IID_ID3D12Resource, (void **)&readback)=00000000
+ID3D12GraphicsCommandList_Close(list)=00000000
+ID3D12Device_CreateFence(device, 0, D3D12_FENCE_FLAG_NONE, &IID_ID3D12Fence, (void **)&fence)=00000000
+ID3D12CommandQueue_Signal(queue, fence, 1)=00000000
+ID3D12Resource_Map(readback, 0, &read_range, (void **)&mapped)=00000000
+D3D12_ROV_DRAW pixels=16 overlapping_instances=10 mismatches=0
+D3D12_PRESENT display=3840x2160 refresh_millihz=59940
+ID3D12Device_CreateCommandQueue(device, &qd, &IID_ID3D12CommandQueue, (void **)&queue)=00000000
+ID3D12Device_CreateCommandAllocator(device, D3D12_COMMAND_LIST_TYPE_DIRECT, &IID_ID3D12CommandAllocator, (void **)&allocator)=00000000
+ID3D12Device_CreateCommandList(device, 0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator, NULL, &IID_ID3D12GraphicsCommandList, (void **)&list)=00000000
+ID3D12Device_CreateCommittedResource(device, &hp, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_RENDER_TARGET, NULL, &IID_ID3D12Resource, (void **)&target)=00000000
+ID3D12Device_CreateDescriptorHeap(device, &hd, &IID_ID3D12DescriptorHeap, (void **)&heap)=00000000
+ID3D12Device_QueryInterface(device, &IID_ID3D12DXVKInteropDevice, (void **)&interop)=00000000
+ID3D12DXVKInteropDevice_GetVulkanResourceInfo(interop, target, &image_handle, &offset)=00000000
+ID3D12Device_CreateCommittedResource(device, &hp, D3D12_HEAP_FLAG_NONE, &buffer_desc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, &IID_ID3D12Resource, (void **)&pixel_readback)=00000000
+ID3D12DXVKInteropDevice_GetVulkanResourceInfo(interop, pixel_readback, &readback_handle, &readback_offset)=00000000
+ID3D12Resource_Map(pixel_readback, 0, &pixel_range, (void **)&pixel)=00000000
+D3D12_PRESENT_PIXEL bgra=153,151,13,255 expected=153,151,13,255
+D3D12_PRESENT_COMPLETE frames=240 pixel_mismatches=0; visual confirmation separate; not a gameplay benchmark
+DEVICE_PROBE_COMPLETE result=0; isolated prototype, game integration and performance untested

@@ -163,3 +163,8 @@ Platform and Vulkan-loader sources retain their original license notices in
 Clang's large-code-model sections into the corresponding load segments.
 ReXGlue, RADV, the payload SDK and their dependencies retain their own licenses;
 a distributable build must carry their matching notices and required sources.
+
+A separate [native D3D12 prototype](prototypes/d3d12/README.md) now passes
+device creation, GPU copy, ROV draw readback, and native display presentation
+on PS5. It uses its own PPSA99302 title and does not replace the working game.
+Game integration and any gameplay performance improvement remain untested.

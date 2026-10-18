@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-18",
+  "title": "PPSA99302",
+  "probe_version": 4,
+  "scope": "isolated native D3D12 compatibility prototype; no gameplay speed claim",
+  "vkd3d_proton": {
+    "source": "https://github.com/HansKristian-Work/vkd3d-proton",
+    "commit": "0bb64c56c8f0dcc11ecc0f6c56e00e4f7bd8d506",
+    "version": "3.1.0",
+    "patch": "prototypes/d3d12/vkd3d-proton-ps5.patch",
+    "patch_sha256": "5e361dc648438e01a9aaa1b39b7433d4c20787aa3c389f26dbffe15fe9551b61"
+  },
+  "dependencies": {
+    "PS5_Vulkan": "5b5e4fc2d80fdb67a4f61ba9e6a8a424026bb8a5",
+    "RADV_source": "7b59ef27c1b09b9671bc4153c41940c3155c3af2",
+    "dxil_spirv": "8434b0639fb2a48ce13aac08a420ecce5d23df0e",
+    "dxbc_spirv": "8dae2d8573af08378c6059aca3d5987da99d20b5",
+    "Vulkan_Headers": "ee2ec5fd83dafce291024683b50dc89219333076",
+    "SPIRV_Headers": "f88a2d766840fc825af1fc065977953ba1fa4a91"
+  },
+  "checks": {
+    "public_prepare_script": "passed native cross compilation of six static archives",
+    "host_sync": "ASan+UBSan passed: auto-reset, counted semaphore, overflow, timeout, 100 cross-thread signals",
+    "native_SELF": "linked, signed, inspected; FTP loadable segment comparison passed",
+    "device_create_hresult": "0x00000000",
+    "ROVsSupported": true,
+    "ResourceBindingTier": 3,
+    "GPU_copy": {
+      "words": 1024,
+      "mismatches": 0
+    },
+    "ROV_draw": {
+      "pixels": 16,
+      "overlapping_instances": 10,
+      "expected_float": 1023,
+      "mismatches": 0
+    },
+    "native_presentation": {
+      "frames": 240,
+      "source": "D3D12 clear of 1280x720 image; native same-device Vulkan blit to VideoOut swapchain",
+      "swapchain_extent": [
+        3840,
+        2160
+      ],
+      "refresh_millihz": 59940,
+      "final_pixel_BGRA": [
+        153,
+        151,
+        13,
+        255
+      ],
+      "expected_pixel_BGRA": [
+        153,
+        151,
+        13,
+        255
+      ],
+      "pixel_mismatches": 0,
+      "visual_confirmation": "not recorded",
+      "benchmark": false
+    }
+  },
+  "artifacts": {
+    "signed_SELF_bytes": 29907002,
+    "signed_SELF_sha256": "4ff014765b291e355abf0c7e3450cccfeaeaad524f212277cd23259276409b9a",
+    "ELF_sha256": "968cb86e4863d3f9efc4e81c100da3c2f1fb11ee8dc268c12acb18c63b9c6d7a"
+  },
+  "working_game_verification": {
+    "title": "PPSA99301",
+    "normalized_elf_bytes": 105496352,
+    "sha256": "c7cbf64693404c16b538c89d3f3123052ff299f63904e4975b64738886459e61",
+    "matches_preprototype_runtime_037": true
+  },
+  "limitations": [
+    "No WoS D3D12 provider/presenter integration yet",
+    "No gameplay or frame-time comparison",
+    "No 120 Hz capability established",
+    "Native static library entry point only; not a complete Wine/DXGI stack",
+    "DXGI waitable-handle duplication and arbitrary external HANDLEs unsupported",
+    "Bounded prerequisite and rendering tests, not D3D12 conformance"
+  ]
+}
