@@ -188,6 +188,74 @@ restored in the runtime source and the experiment removed from the active
 dependency list. Its host tests establish branch behavior, not a useful PS5
 scheduling policy. Sanitized rows are in `coarse-zero-delay-regression.json`.
 
+## Wait-object and sampled draw probe
+
+The next diagnostic candidate preserves the restored runtime 034 scheduling
+policy. NtWaitForSingleObjectEx is sampled once per 64 calls. Delay calls are
+all observed. After each original call returns, a bounded per-thread table
+records its guest caller, object handle, requested timeout (100 ns units,
+big-endian), alertable flag, result category, elapsed wall interval and sampled
+count. New sampled handle rows resolve object type and guest address once
+per report window. Only the thread that calls VdSwap reports wait rows.
+
+The collector watches up to 32 handle/guest-address pairs with lock-free
+atomic entries. Imported KeSetEvent, NtSetEvent and KeReleaseSemaphore wrappers
+forward the original call exactly once and then record matching signals in
+bounded per-thread tables. Reports give the observed signaling thread ID,
+entry point, guest priority increment, caller and raw return value. A signaling
+thread is not necessarily an object's owner. Other signaling APIs, direct
+runtime signals, signals before registration and partial final windows are
+not captured. Handle/address reuse can make cross-window correlations
+ambiguous. Overflow is visible in the coverage rows; this is not a full trace.
+
+`rexglue-sampled-draw-costs.patch` selects whole draws with a per-thread
+xorshift generator, approximately 1/64 draws, avoiding a fixed periodic draw
+index. It records eleven exclusive host intervals: shader analysis, submission
+begin, primitive processing, shader translation/modification, samplers,
+texture requests, render targets, pipeline configuration, state/bindings,
+residency and draw emission. Reports give raw sample count and mean
+microseconds per sampled draw. Multiplying by draws/frame is an approximate
+estimate, not an exact phase total or a GPU execution measurement. Early
+returns retain the time spent in their final stage.
+
+Host ASan/UBSan checks cover ten wrappers with diagnostics disabled/enabled,
+wait sampling, endian timeouts, result categories, startup/report reset,
+signal matching, worker thread IDs and bounded overflow. The draw sampler
+passed 100,000 modeled draws with exact mock-clock stage totals and early
+return accounting; its disabled path reads no clocks. These are instrumentation
+checks, not a console performance result. The native renderer compiled.
+
+Runtime 037 reached user-confirmed street-facing gameplay at about
+15.6–16.3 swaps/second in heavy tail windows. Frame-producing thread 8 polled
+event handle `0xf800002c` (guest object `0x3002f018`) with a 1 ms requested
+timeout. In the last window, 4,532 of 4,535 sampled calls returned success,
+with three timeouts. Imported NtSetEvent calls from thread 6 were observed
+signaling this event. These observations establish a correlation, not the
+engine-level purpose or ownership of the event. The sampled calls were fast
+on average; the aggregate NtSingle time is not evidence of a long block on
+each call. Zero-duration delay calls still averaged about 195 us with the
+restored backoff.
+
+At approximately 7,147 draws/frame, the final sampled stage means extrapolate
+to about 9.6 ms/frame for state/bindings, 3.7 ms for texture requests, 3.2 ms
+for sampler preparation and 2.4 ms for emission. The state/bindings stage
+includes viewport/dynamic-state work, system constants and UpdateBindings;
+it is wider than the separately measured UpdateBindings interval. These are
+sampling estimates, not exact additional frame costs. The pipeline stage was
+small in this capture (about 0.6 ms/frame extrapolated). Source inspection
+found that writes to used float-constant ranges invalidate uniform data even
+when the values are unchanged. Avoiding redundant invalidation is a candidate,
+but the rate of identical writes and its useful savings are not yet measured.
+See `wait-object-probe-result.json` and `coarse-wait-object-probe.json`.
+
+The actual console TOML still contains only four overrides: page-state refresh
+false, memory readback false, anisotropic override 0, and FSI. Startup confirms
+those settings and background shader setup true. Omitted resolution-scale
+values default to 1. Texture-cache source defaults are 384 MB soft / 768 MB
+hard; this capture does not establish cache eviction as a bottleneck. No
+configuration was changed. `config-review.json` records the review and earlier
+negative comparisons. No material gameplay FPS gain is claimed for the probe.
+
 ## High-frame-rate timing constraints
 
 Disabling the existing `vsync` option already made menus run too fast without

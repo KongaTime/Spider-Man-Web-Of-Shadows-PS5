@@ -1,0 +1,155 @@
+--- a/src/graphics/vulkan/command_processor.cpp
++++ b/src/graphics/vulkan/command_processor.cpp
+@@ -93,6 +93,8 @@
+   std::array<uint64_t, size_t(WosCost::kCount)> ns{}, calls{};
+   uint64_t last = 0, last_cpu = 0, frames = 0;
+   uint64_t texture_reuses = 0, texture_writes = 0;
++  std::array<uint64_t, 11> sampled_ns{};
++  uint64_t sampled_draws = 0, detail_draws = 0;
+ };
+ thread_local WosFrameCosts wos_costs;
+ struct WosCostScope {
+@@ -110,6 +112,36 @@
+     enabled = false;
+   }
+   ~WosCostScope() { Stop(); }
++};
++// Sample whole draws with a per-thread PRNG to avoid always selecting the
++// same periodic draw index. Report raw mean microseconds per sampled draw;
++// extrapolation is approximate and these are host intervals, not GPU time.
++thread_local uint32_t wos_draw_sample_rng = 0x6d2b79f5;
++struct WosSampledDraw {
++  bool selected = false;
++  uint64_t start = 0;
++  size_t phase = 0;
++  WosSampledDraw() {
++    if (!REXCVAR_GET(wos_frame_costs)) return;
++    ++wos_costs.detail_draws;
++    auto& random = wos_draw_sample_rng;
++    random ^= random << 13; random ^= random >> 17; random ^= random << 5;
++    selected = (random & 63) == 0;
++    if (!selected) return;
++    ++wos_costs.sampled_draws;
++    start = rex::chrono::Clock::QueryHostTickCount();
++  }
++  WosSampledDraw(const WosSampledDraw&) = delete;
++  WosSampledDraw& operator=(const WosSampledDraw&) = delete;
++  void Next(size_t next) {
++    if (!selected) return;
++    const auto now = rex::chrono::Clock::QueryHostTickCount();
++    wos_costs.sampled_ns[phase] += now - start;
++    start = now; phase = next;
++  }
++  ~WosSampledDraw() {
++    if (selected) wos_costs.sampled_ns[phase] += rex::chrono::Clock::QueryHostTickCount() - start;
++  }
+ };
+ struct WosCostReport {
+   ~WosCostReport() {
+@@ -143,6 +175,18 @@
+                 double(state.texture_reuses) / frames, double(state.texture_writes) / frames);
+     REXLOG_INFO("WOS extra nested ms/frame: swap {:.2f}, copy {:.2f}, fence-check-and-reclaim {:.2f}",
+                 ms(WosCost::kSwap), ms(WosCost::kCopy), ms(WosCost::kFenceCheck));
++    REXLOG_INFO("WOS draw sample coverage: draws {}, sampled {} (target 1/64)",
++                state.detail_draws, state.sampled_draws);
++    const double sample_scale = state.sampled_draws ? 1.0 / (1000.0 * state.sampled_draws) : 0.0;
++    REXLOG_INFO("WOS sampled draw us/sample: analyze {:.3f}, begin {:.3f}, primitives {:.3f}, "
++                "shaders {:.3f}, samplers {:.3f}, textures {:.3f}, targets {:.3f}, pipeline {:.3f}, "
++                "state-bindings {:.3f}, residency {:.3f}, emit {:.3f}",
++                state.sampled_ns[0]*sample_scale, state.sampled_ns[1]*sample_scale,
++                state.sampled_ns[2]*sample_scale, state.sampled_ns[3]*sample_scale,
++                state.sampled_ns[4]*sample_scale, state.sampled_ns[5]*sample_scale,
++                state.sampled_ns[6]*sample_scale, state.sampled_ns[7]*sample_scale,
++                state.sampled_ns[8]*sample_scale, state.sampled_ns[9]*sample_scale,
++                state.sampled_ns[10]*sample_scale);
+     state = {}; state.last = now; state.last_cpu = cpu;
+   }
+ };
+@@ -3793,6 +3837,7 @@
+   WosDrawScope wos_draw;
+ #endif
+   WosCostScope wos_draw_cost(WosCost::kDraw);
++  WosSampledDraw sampled_draw;
+ 
+   bool surface_pitch_is_zero = regs.Get<reg::RB_SURFACE_INFO>().surface_pitch == 0;
+ 
+@@ -3884,6 +3929,7 @@
+     #if WOS_ENABLE_PHASE_TIMING
+     wos_draw.Next(1);
+     #endif
++    sampled_draw.Next(1);
+     if (!BeginSubmission(true)) {
+       return draw_fail("begin_submission");
+     }
+@@ -3893,6 +3939,7 @@
+     wos_draw.Next(2);
+ 
+     #endif
++    sampled_draw.Next(2);
+     // Process primitives.
+     bool primitives_ok;
+     {
+@@ -3933,6 +3980,7 @@
+     wos_draw.Next(3);
+ 
+     #endif
++    sampled_draw.Next(3);
+     // Shader modifications.
+     vertex_shader_modification = pipeline_cache_->GetCurrentVertexShaderModification(
+         *vertex_shader, primitive_processing_result.host_vertex_shader_type, interpolator_mask,
+@@ -3959,6 +4007,7 @@
+     wos_draw.Next(4);
+ 
+     #endif
++    sampled_draw.Next(4);
+     // Obtain the samplers. Note that the bindings don't depend on the shader
+     // modification, so if on the second iteration of this loop it becomes
+     // different for some reason (like a race condition with the guest in index
+@@ -4031,6 +4080,7 @@
+   wos_draw.Next(5);
+ 
+   #endif
++    sampled_draw.Next(5);
+   uint32_t normalized_color_mask =
+       pixel_shader ? draw_util::GetNormalizedColorMask(regs, pixel_shader->writes_color_targets())
+                    : 0;
+@@ -4048,6 +4098,7 @@
+   wos_draw.Next(6);
+ 
+   #endif
++    sampled_draw.Next(6);
+   const VulkanPipelineCache::PipelineLayoutProvider* pipeline_layout_provider;
+   // Set up the render targets - this may perform dispatches and draws.
+   if (!render_target_cache_->Update(is_rasterization_done, normalized_depth_control,
+@@ -4060,6 +4111,7 @@
+   wos_draw.Next(7);
+ 
+   #endif
++    sampled_draw.Next(7);
+   // Create the pipeline (for this, need the render pass from the render target
+   // cache), translating the shaders - doing this now to obtain the used
+   // textures.
+@@ -4087,6 +4139,7 @@
+   #if WOS_ENABLE_PHASE_TIMING
+   wos_draw.Next(8);
+   #endif
++    sampled_draw.Next(8);
+   if (current_guest_graphics_pipeline_ != pipeline) {
+     deferred_command_buffer_.CmdVkBindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+     current_guest_graphics_pipeline_ = pipeline;
+@@ -4206,6 +4259,7 @@
+   wos_draw.Next(9);
+ 
+   #endif
++    sampled_draw.Next(9);
+   // Ensure vertex buffers are resident.
+   WosCostScope wos_residency_cost(WosCost::kResidency);
+   const Shader::ConstantRegisterMap& constant_map_vertex = vertex_shader->constant_register_map();
+@@ -4325,6 +4379,7 @@
+   wos_draw.Next(10);
+ 
+   #endif
++    sampled_draw.Next(10);
+   // Insert the shared memory barrier if needed.
+   wos_residency_cost.Stop();
+   // TODO(Triang3l): Find some PM4 command that can be used for indication of

@@ -3,6 +3,7 @@
 #include <rex/logging.h>
 #include <time.h>
 #include <array>
+#include "wait_trace.h"
 
 namespace {
 uint64_t CpuNanoseconds() {
@@ -20,15 +21,33 @@ thread_local Sample sample;
 void MeasureGuestWait(PPCContext& ctx, uint8_t* base, size_t kind,
                       void (*original)(PPCContext&, uint8_t*)) {
 #if WOS_FRAME_COST_DIAGNOSTICS
+  const auto trace = wos::trace::BeginWait(kind, kind == 2 ? ctx.r3.u32 : 0,
+      uint32_t(ctx.lr), kind == 2 ? ctx.r6.u32 : kind == 4 ? ctx.r5.u32 : 0,
+      kind == 2 ? ctx.r5.u32 : kind == 4 ? ctx.r4.u32 : 0, base);
   const auto start = rex::chrono::Clock::QueryHostTickCount();
   original(ctx, base);
-  sample.wait_ns[kind] += rex::chrono::Clock::QueryHostTickCount() - start;
+  const auto elapsed = rex::chrono::Clock::QueryHostTickCount() - start;
+  sample.wait_ns[kind] += elapsed;
   ++sample.wait_calls[kind];
+  wos::trace::EndWait(trace, elapsed, ctx.r3.u32);
 #else
   original(ctx, base);
 #endif
 }
 }  // namespace
+
+// Observe only imported guest signaling APIs, preserving every original call.
+#define WOS_SIGNAL_WRAPPER(name, kind) \
+extern "C" void __real___imp__##name(PPCContext&, uint8_t*); \
+extern "C" void __wrap___imp__##name(PPCContext& ctx, uint8_t* base) { \
+  const auto object = ctx.r3.u32; const auto caller = uint32_t(ctx.lr); \
+  __real___imp__##name(ctx, base); \
+  if constexpr (WOS_FRAME_COST_DIAGNOSTICS) wos::trace::Signal(kind, object, caller, ctx.r3.u32); \
+}
+WOS_SIGNAL_WRAPPER(KeSetEvent, 0)
+WOS_SIGNAL_WRAPPER(NtSetEvent, 1)
+WOS_SIGNAL_WRAPPER(KeReleaseSemaphore, 2)
+#undef WOS_SIGNAL_WRAPPER
 
 extern "C" void __real___imp__KeWaitForSingleObject(PPCContext&, uint8_t*);
 extern "C" void __wrap___imp__KeWaitForSingleObject(PPCContext& ctx, uint8_t* base) {
@@ -85,6 +104,7 @@ extern "C" void __wrap___imp__VdSwap(PPCContext& ctx, uint8_t* base) {
                   double(s.wait_calls[0])/s.frames, double(s.wait_calls[1])/s.frames,
                   double(s.wait_calls[2])/s.frames, double(s.wait_calls[3])/s.frames,
                   double(s.wait_calls[4])/s.frames, double(s.wait_calls[5])/s.frames);
+      wos::trace::ReportWaitWindow(s.frames);
 #endif
       s.wait_ns = {}; s.wait_calls = {};
       s.wall = s.cpu = s.swap = 0;
@@ -93,6 +113,9 @@ extern "C" void __wrap___imp__VdSwap(PPCContext& ctx, uint8_t* base) {
   } else {
     // Startup/import waits are outside the first complete gameplay interval.
     s.wait_ns = {}; s.wait_calls = {};
+#if WOS_FRAME_COST_DIAGNOSTICS
+    wos::trace::ResetWaitWindow();
+#endif
   }
   s.last = end;
   s.last_cpu = cpu;

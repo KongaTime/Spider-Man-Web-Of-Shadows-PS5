@@ -62,7 +62,7 @@ int main() {
   assert(logged.empty());
   tick = interval_start + 2000000000;
   { WosCostReport report; }
-  assert(logged.size() == 4 && logged[0][0] == 1.0 && logged[0][1] == 1000.0);
+  assert(logged.size() == 6 && logged[0][0] == 1.0 && logged[0][1] == 1000.0);
   assert(logged[0][3] == 0.5); // one draw in two reported frames
   assert(std::abs(logged[1][0] - 100.0 / 2000000.0) < 1e-12);
   assert(wos_costs.frames == 0 && wos_costs.ns[size_t(WosCost::kDraw)] == 0);
@@ -70,7 +70,26 @@ int main() {
   const auto before = clock_calls;
   { WosCostScope cost(WosCost::kDraw); }
   { WosCostReport report; }
-  assert(clock_calls == before && logged.size() == 4 && wos_costs.last == 0);
+  assert(clock_calls == before && logged.size() == 6 && wos_costs.last == 0);
+  for (unsigned i=0; i<1000; ++i) { WosSampledDraw draw; draw.Next(1); }
+  assert(clock_calls == before); // disabled sampled path reads no clocks
+  enabled = true;
+  for (unsigned i=0; i<100000; ++i) {
+    WosSampledDraw draw;
+    for (size_t phase=0; phase<10; ++phase) { tick += phase+1; draw.Next(phase+1); }
+    tick += 11;
+  }
+  const auto selected = wos_costs.sampled_draws;
+  assert(wos_costs.detail_draws == 100000 && selected > 1400 && selected < 1750);
+  for (size_t phase=0; phase<11; ++phase) assert(wos_costs.sampled_ns[phase] == selected*(phase+1));
+  assert(clock_calls - before == selected*12);
+  uint64_t old_phase0 = wos_costs.sampled_ns[0];
+  while (true) {
+    WosSampledDraw draw;
+    tick += 37;
+    if (draw.selected) break; // early-return destruction also records phase zero
+  }
+  assert(wos_costs.sampled_ns[0] == old_phase0+37);
 }
 '''
 args.work_dir.mkdir(parents=True, exist_ok=True)

@@ -15,6 +15,10 @@ def verified_runtime_patches(checkout, patch_dir):
         (['src/graphics/command_processor.cpp', 'src/graphics/vulkan/command_processor.cpp'], [
             ['rexglue-frame-diagnostics.patch', 'rexglue-disable-phase-timing.patch',
              'rexglue-coarse-frame-costs.patch', 'rexglue-texture-descriptor-reuse.patch',
+             'rexglue-command-wait-breakdown.patch', 'rexglue-command-ring-wait.patch',
+             'rexglue-sampled-draw-costs.patch'],
+            ['rexglue-frame-diagnostics.patch', 'rexglue-disable-phase-timing.patch',
+             'rexglue-coarse-frame-costs.patch', 'rexglue-texture-descriptor-reuse.patch',
              'rexglue-command-wait-breakdown.patch', 'rexglue-command-ring-wait.patch'],
             ['rexglue-frame-diagnostics.patch', 'rexglue-disable-phase-timing.patch',
              'rexglue-coarse-frame-costs.patch', 'rexglue-texture-descriptor-reuse.patch',

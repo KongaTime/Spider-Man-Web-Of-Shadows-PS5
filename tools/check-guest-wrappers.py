@@ -53,7 +53,8 @@ for relative in range(0, mapping[5], 16):
     entries[guest] = relocations.get(mapping[4] + relative + 8, host)
 names = ['VdSwap', 'KeWaitForSingleObject', 'KeWaitForMultipleObjects',
          'NtWaitForSingleObjectEx', 'NtWaitForMultipleObjectsEx',
-         'KeDelayExecutionThread', 'RtlEnterCriticalSection']
+         'KeDelayExecutionThread', 'RtlEnterCriticalSection',
+         'KeSetEvent', 'NtSetEvent', 'KeReleaseSemaphore']
 source = args.mapping_source.read_text()
 for name in names:
     match = re.search(r'\{\s*(0x[0-9A-Fa-f]+),\s*__imp__' + name + r'\s*\}', source)

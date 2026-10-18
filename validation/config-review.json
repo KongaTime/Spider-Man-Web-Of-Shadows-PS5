@@ -1,0 +1,30 @@
+{
+  "status": "actual-console-config-read-and-compared-with-source-defaults",
+  "config_bytes": 154,
+  "config_sha256": "408d6056ff59145f35a9da2c510c41fb3c9997aa72985ec9130afb54bef3baf7",
+  "explicit_settings": {
+    "clear_memory_page_state": false,
+    "readback_memexport": false,
+    "anisotropic_override": 0,
+    "render_target_path_vulkan": "fsi"
+  },
+  "omitted_source_defaults": {
+    "vsync": true,
+    "async_shader_compilation": true,
+    "draw_resolution_scale_x": 1,
+    "draw_resolution_scale_y": 1,
+    "resolution_scale": 1,
+    "texture_cache_memory_limit_soft": 384,
+    "texture_cache_memory_limit_hard": 768,
+    "primitive_processor_cache_min_indices": 0
+  },
+  "observed_startup": "background shader setup true; FSI; readback false; page refresh false; anisotropic override 0",
+  "previous_comparisons": {
+    "vsync_off": "menus accelerated without useful gameplay gain; restored enabled",
+    "fbo": "black/broken graphics; FSI restored",
+    "requested_lower_video_mode": "854x480 setting did not change actual 1280x720 render size"
+  },
+  "conclusion": "No obvious costly override in the actual config. Texture budget increases require evidence of eviction/memory pressure; current capture does not establish that bottleneck.",
+  "mutation": "none: console configuration preserved",
+  "limits": "Omitted values are pinned-source defaults, not a new dump of every runtime cvar. Draw-stage times are CPU host intervals, not GPU timestamps."
+}

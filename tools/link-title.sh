@@ -44,6 +44,7 @@ printf '};\n' >> "$build/link/wos-local.map"
     --wrap=__imp__KeWaitForSingleObject --wrap=__imp__KeWaitForMultipleObjects \
     --wrap=__imp__NtWaitForSingleObjectEx --wrap=__imp__NtWaitForMultipleObjectsEx \
     --wrap=__imp__KeDelayExecutionThread --wrap=__imp__RtlEnterCriticalSection \
+    --wrap=__imp__KeSetEvent --wrap=__imp__NtSetEvent --wrap=__imp__KeReleaseSemaphore \
     --lto-O3 --thinlto-jobs=2 \
     --thinlto-cache-dir="$build/link/thinlto-cache" \
     -e _start -o "$build/link/llvm-pie.elf" \

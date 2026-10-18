@@ -1,0 +1,161 @@
+{
+  "status": "console-gameplay-captured-wait-object-and-draw-stages-identified",
+  "target_60_game_frames_per_second": "not achieved",
+  "purpose": "Identify sampled waited objects, requested timeouts, observed signaling threads and host draw-stage costs",
+  "scheduling": "Original XThread::Delay source retained; no delay, priority, event, clock or vblank behavior changes",
+  "configuration": {
+    "diagnostics": true,
+    "texture_descriptor_reuse": true,
+    "command_ring_spin_limit": 16,
+    "settings_bytes_preserved": true
+  },
+  "host_tests": {
+    "sanitizers": [
+      "address",
+      "undefined behavior"
+    ],
+    "hle_forwarding": "all ten calls exactly once; off/on, argument snapshots and results, context/memory, startup/reset",
+    "trace_collector": "passed: 1/64 sampling, endian timeouts, return categories, signal matching, worker IDs and bounded overflow",
+    "draw_sampler": "passed: 100000 modeled draws, exact mock-clock stage totals, disabled/no clocks, early returns",
+    "scope": "Modeled host instrumentation checks, not console speed or all-interleaving validation"
+  },
+  "native": {
+    "renderer_compile": "passed",
+    "title_compile_link": "passed",
+    "load_segments": "five valid nonoverlapping load segments",
+    "self_integrity": "valid",
+    "all_ten_wrapped_guest_mappings": "verified in linked PPC function table",
+    "signed_eboot_bytes": 102737277,
+    "signed_eboot_sha256": "5d14e5d690b293145ec48b91d9affa5b8dacbb125c17ed68e90aa0e5cb96609a",
+    "executable_readback": {
+      "bytes": 105496352,
+      "sha256": "c7cbf64693404c16b538c89d3f3123052ff299f63904e4975b64738886459e61",
+      "format": "extracted-without-version-trailer"
+    }
+  },
+  "sampling": {
+    "NtSingle": "1/64 calls",
+    "delay": "all calls on swapping thread",
+    "draws": "approximately 1/64 whole draws using per-thread PRNG"
+  },
+  "bounds": {
+    "wait_rows_per_thread": 16,
+    "watched_handle_guest_pairs": 32,
+    "signal_rows_per_thread": 16,
+    "overflow": "reported in coverage rows"
+  },
+  "console": {
+    "launched": true,
+    "gameplay_capture": "user confirmed in gameplay facing the street",
+    "runtime_log": "wos_recomp_037.log",
+    "log_levels": {
+      "info": 637,
+      "warning": 11
+    },
+    "representative_tail": {
+      "guest_swaps_per_second": "about 15.6-16.3 in heavy tail windows",
+      "frame_producing_thread": 8,
+      "waited_event_handle": "0xf800002c",
+      "guest_object_address": "0x3002f018",
+      "sampled_wait_timeout_100ns": -10000,
+      "sampled_nt_single_waits_last_window": 4535,
+      "sampled_wait_successes_last_window": 4532,
+      "sampled_wait_timeouts_last_window": 3,
+      "observed_signaling_thread": 6,
+      "observed_signal_api": "NtSetEvent",
+      "delay_requested_100ns": 0,
+      "delay_mean_microseconds_last_window": 194.574,
+      "draws_per_frame_last_window": 7147.2,
+      "sampled_stage_mean_us_per_sampled_draw": {
+        "analyze": 0.075,
+        "begin": 0.036,
+        "primitives": 0.145,
+        "shaders": 0.085,
+        "samplers": 0.447,
+        "textures": 0.513,
+        "targets": 0.178,
+        "pipeline": 0.086,
+        "state-bindings": 1.337,
+        "residency": 0.092,
+        "emit": 0.336
+      },
+      "approximate_stage_ms_per_frame": {
+        "analyze": 0.536,
+        "begin": 0.257,
+        "primitives": 1.036,
+        "shaders": 0.608,
+        "samplers": 3.195,
+        "textures": 3.667,
+        "targets": 1.272,
+        "pipeline": 0.615,
+        "state-bindings": 9.556,
+        "residency": 0.658,
+        "emit": 2.401
+      }
+    },
+    "tail_diagnostics": [
+      "WOS draw sample coverage: draws 227997, sampled 3562 (target 1/64)",
+      "WOS sampled draw us/sample: analyze 0.076, begin 0.037, primitives 0.205, shaders 0.090, samplers 0.434, textures 0.532, targets 0.177, pipeline 0.089, state-bindings 1.373, residency 0.194, emit 0.340",
+      "WOS command waits ms/frame: ring-empty 29.34 (CPU 3.57), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.5, packets 99.3, sleeps 0.0, coherency 77.3",
+      "WOS signal detail: kind 1, thread 6, entry 0x82b15e38, priority 0, object 0xf800002c, caller 0x82b16c5c, calls 220, last-return 0x0",
+      "WOS signal detail coverage: KeSetEvent 0, NtSetEvent 1, KeReleaseSemaphore 2; dropped 0",
+      "WOS guest perf: 15.67 swaps/s, 63.83 ms/frame, calling-thread CPU 15.32 ms, VdSwap 0.00 ms",
+      "WOS guest waits ms/frame: KeSingle 0.00, KeMultiple 0.00, NtSingle 11.58, NtMultiple 0.00, delay 38.09, critical-section 0.00",
+      "WOS guest wait calls/frame: KeSingle 0.0, KeMultiple 0.0, NtSingle 8802.3, NtMultiple 0.0, delay 195.4, critical-section 2.3",
+      "WOS wait detail: kind 4, thread 8, entry 0x82963840, priority 0, object 0x0, type 0, guest 0x0, caller 0x82b1a684, timeout100ns 0, missing false, alertable 0, samples 6254, success 6254, timedout 0, other 0, mean-us 194.884, frames 32",
+      "WOS wait detail: kind 2, thread 8, entry 0x82963840, priority 0, object 0xf800002c, type 2, guest 0x3002f018, caller 0x82b22ab8, timeout100ns -10000, missing false, alertable 0, samples 4401, success 4401, timedout 0, other 0, mean-us 1.091, frames 32",
+      "WOS wait detail coverage: NtSingle 1/64, delay all; dropped-or-unwatched 0",
+      "WOS coarse perf: 15.63 swaps/s, 63.96 ms/frame, graphics-thread CPU 33.62 ms/frame, draws 7006.1, query ends 0.0, queue submits 3.5",
+      "WOS coarse nested ms/frame: draw 22.16, primitives 0.68, bindings 7.72, residency 0.84, query-end 0.00, fence-wait 0.00, playback 1.92, queue-submit 0.66",
+      "WOS texture descriptors/frame: reused 4796.7, written 1356.4",
+      "WOS extra nested ms/frame: swap 1.05, copy 2.36, fence-check-and-reclaim 0.02",
+      "WOS draw sample coverage: draws 224196, sampled 3533 (target 1/64)",
+      "WOS sampled draw us/sample: analyze 0.076, begin 0.036, primitives 0.186, shaders 0.091, samplers 0.445, textures 0.639, targets 0.177, pipeline 0.089, state-bindings 1.362, residency 0.142, emit 0.344",
+      "WOS command waits ms/frame: ring-empty 31.11 (CPU 3.75), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.4, packets 98.7, sleeps 0.0, coherency 76.7",
+      "WOS signal detail: kind 1, thread 6, entry 0x82b15e38, priority 0, object 0xf800002c, caller 0x82b16c5c, calls 221, last-return 0x0",
+      "WOS signal detail coverage: KeSetEvent 0, NtSetEvent 1, KeReleaseSemaphore 2; dropped 0",
+      "WOS guest perf: 15.63 swaps/s, 63.97 ms/frame, calling-thread CPU 14.99 ms, VdSwap 0.00 ms",
+      "WOS guest waits ms/frame: KeSingle 0.00, KeMultiple 0.00, NtSingle 11.78, NtMultiple 0.00, delay 38.67, critical-section 0.00",
+      "WOS guest wait calls/frame: KeSingle 0.0, KeMultiple 0.0, NtSingle 8292.3, NtMultiple 0.0, delay 198.6, critical-section 2.1",
+      "WOS wait detail: kind 4, thread 8, entry 0x82963840, priority 0, object 0x0, type 0, guest 0x0, caller 0x82b1a684, timeout100ns 0, missing false, alertable 0, samples 6354, success 6354, timedout 0, other 0, mean-us 194.753, frames 32",
+      "WOS wait detail: kind 2, thread 8, entry 0x82963840, priority 0, object 0xf800002c, type 2, guest 0x3002f018, caller 0x82b22ab8, timeout100ns -10000, missing false, alertable 0, samples 4147, success 4147, timedout 0, other 0, mean-us 0.467, frames 32",
+      "WOS wait detail coverage: NtSingle 1/64, delay all; dropped-or-unwatched 0",
+      "WOS coarse perf: 15.66 swaps/s, 63.86 ms/frame, graphics-thread CPU 34.39 ms/frame, draws 7143.8, query ends 0.0, queue submits 3.3",
+      "WOS coarse nested ms/frame: draw 23.02, primitives 0.71, bindings 7.86, residency 0.90, query-end 0.00, fence-wait 0.00, playback 1.98, queue-submit 0.78",
+      "WOS texture descriptors/frame: reused 4876.1, written 1406.2",
+      "WOS extra nested ms/frame: swap 1.25, copy 3.19, fence-check-and-reclaim 0.02",
+      "WOS draw sample coverage: draws 228601, sampled 3602 (target 1/64)",
+      "WOS sampled draw us/sample: analyze 0.077, begin 0.056, primitives 0.181, shaders 0.091, samplers 0.452, textures 0.593, targets 0.178, pipeline 0.092, state-bindings 1.353, residency 0.201, emit 0.343",
+      "WOS command waits ms/frame: ring-empty 28.92 (CPU 3.49), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.4, packets 100.7, sleeps 0.0, coherency 78.7",
+      "WOS signal detail: kind 1, thread 6, entry 0x82b15e38, priority 0, object 0xf800002c, caller 0x82b16c5c, calls 227, last-return 0x0",
+      "WOS signal detail coverage: KeSetEvent 0, NtSetEvent 1, KeReleaseSemaphore 2; dropped 0",
+      "WOS guest perf: 16.26 swaps/s, 61.49 ms/frame, calling-thread CPU 15.23 ms, VdSwap 0.00 ms",
+      "WOS guest waits ms/frame: KeSingle 0.00, KeMultiple 0.00, NtSingle 11.26, NtMultiple 0.00, delay 36.49, critical-section 0.00",
+      "WOS guest wait calls/frame: KeSingle 0.0, KeMultiple 0.0, NtSingle 8795.3, NtMultiple 0.0, delay 187.5, critical-section 2.0",
+      "WOS wait detail: kind 4, thread 8, entry 0x82963840, priority 0, object 0x0, type 0, guest 0x0, caller 0x82b1a684, timeout100ns 0, missing false, alertable 0, samples 6188, success 6188, timedout 0, other 0, mean-us 194.574, frames 33",
+      "WOS wait detail: kind 2, thread 8, entry 0x82963840, priority 0, object 0xf800002c, type 2, guest 0x3002f018, caller 0x82b22ab8, timeout100ns -10000, missing false, alertable 0, samples 4535, success 4532, timedout 3, other 0, mean-us 1.674, frames 33",
+      "WOS wait detail coverage: NtSingle 1/64, delay all; dropped-or-unwatched 0",
+      "WOS coarse perf: 16.26 swaps/s, 61.49 ms/frame, graphics-thread CPU 34.09 ms/frame, draws 7147.2, query ends 0.0, queue submits 3.2",
+      "WOS coarse nested ms/frame: draw 22.99, primitives 0.70, bindings 7.84, residency 0.86, query-end 0.00, fence-wait 0.00, playback 1.98, queue-submit 0.17",
+      "WOS texture descriptors/frame: reused 4890.9, written 1389.4",
+      "WOS extra nested ms/frame: swap 1.24, copy 3.46, fence-check-and-reclaim 0.02",
+      "WOS draw sample coverage: draws 235856, sampled 3696 (target 1/64)",
+      "WOS sampled draw us/sample: analyze 0.075, begin 0.036, primitives 0.145, shaders 0.085, samplers 0.447, textures 0.513, targets 0.178, pipeline 0.086, state-bindings 1.337, residency 0.092, emit 0.336",
+      "WOS command waits ms/frame: ring-empty 26.94 (CPU 3.23), wait-packet 0.02, nested poll-sleep 0.00, nested coherency 0.01; calls/frame ring 3.4, packets 99.5, sleeps 0.0, coherency 77.5"
+    ]
+  },
+  "limits": [
+    "Observer overhead has not been isolated in a controlled console comparison.",
+    "Host wall/CPU timings are not GPU execution timestamps.",
+    "Signaling thread is not necessarily object owner; only three imported signaling APIs observed.",
+    "Registration timing, sampling, bounded overflow, handle/address reuse and partial final windows limit coverage.",
+    "Draw means are raw microseconds per sampled draw; extrapolated per-frame totals are approximate."
+  ],
+  "findings": [
+    "Almost all sampled waits on the hot event returned success immediately; aggregate wait time cannot be treated as long blocking on that event.",
+    "Imported NtSetEvent on thread 6 was observed signaling the event polled by frame-producing thread 8. Higher-level engine purpose is not established.",
+    "State/bindings dominate sampled draw preparation: approximately 9.6 ms/frame extrapolated; texture requests and samplers roughly 3-4 ms/frame each.",
+    "Source inspection found unconditional invalidation on writes to used float-constant ranges, including identical values; the prevalence and useful savings remain unmeasured.",
+    "No material speedup is claimed for this measurement build; 60 FPS remains unachieved."
+  ]
+}

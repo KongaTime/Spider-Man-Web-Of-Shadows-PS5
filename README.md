@@ -101,9 +101,10 @@ synchronous readback as the cause of this capture's slowdown.
 
 For the current experiment, apply `patches/rexglue-coarse-frame-costs.patch`
 after the timing-disable patch, then `patches/rexglue-texture-descriptor-reuse.patch`.
-Apply `patches/rexglue-command-wait-breakdown.patch` last for the current
-command-ring and register-wait measurements.
-The optional `patches/rexglue-command-ring-wait.patch` makes the spin budget
+Then apply `patches/rexglue-command-wait-breakdown.patch`,
+`patches/rexglue-command-ring-wait.patch`, and
+`patches/rexglue-sampled-draw-costs.patch` in that order for the current probes.
+The command-ring patch makes the spin budget
 tunable and wakes the worker for queued host callbacks. To reproduce the
 short-spin comparison, add `WOS_COMMAND_RING_SPIN_LIMIT=16` to the build
 environment; the default is the original 500. Its extracted worker passed
@@ -131,8 +132,17 @@ The wrappers forward the original context and guest memory to the original
 implementation exactly once. Their host tests cover forwarding and report
 reset with diagnostics enabled and disabled. `tools/check-guest-wrappers.py`
 checks the unstripped linked ELF against the private generated import table
-to verify that game calls actually reach all seven wrappers. No generated
+to verify that game calls actually reach all ten wrappers. No generated
 game source is included in this repository.
+
+The latest diagnostic build samples NtSingle waits at 1/64 calls, records
+delay arguments, and observes imported KeSetEvent, NtSetEvent and
+KeReleaseSemaphore calls for watched objects. Logs include guest handles,
+object types/addresses, requested timeouts, return categories, guest caller
+addresses and thread entry points. These are observations, not object
+ownership or a complete synchronization trace. Tables are bounded and report
+overflow. Rendering detail samples approximately 1/64 draws across eleven
+stages; it reports mean host microseconds per sampled draw, not GPU time.
 
 The zero-duration priority change in `patches/rexglue-zero-delay-priority.patch`
 is a **rejected experiment**. It passed 720 host branch checks but removing

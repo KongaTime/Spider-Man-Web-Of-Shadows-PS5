@@ -94,7 +94,7 @@
     "console_readback": "passed",
     "user_test": "passed: user confirmed navigation works on PS5"
   },
-  "scheduling_diagnostics": "Game-thread waits captured in guest-wait-probe-result.json; source inspection identified a guest/host priority comparison mismatch",
+  "scheduling_diagnostics": "Hot event and observed signaling thread identified; sampled rendering stages captured. See wait-object-probe-result.json and config-review.json.",
   "artifacts_scope": "Historical settings-navigation build; current diagnostic candidate is separately recorded in guest-wait-probe-result.json",
-  "latest_local_candidate": "Restored runtime 034 executable byte for byte; readback verified and launched. See zero-delay-priority-result.json rollback record."
+  "latest_local_candidate": "wait-object-probe-result.json; built, readback verified and launched; runtime 037 street-facing gameplay captured"
 }

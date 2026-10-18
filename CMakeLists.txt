@@ -47,7 +47,7 @@ set(rex_includes "${REXGLUE_SRC}/include" "${REXGLUE_PS5_BUILD}/include"
 
 include("${WOS_GENERATED_DIR}/sources.cmake")
 add_library(wos_guest OBJECT ${GENERATED_SOURCES})
-add_library(wos_app OBJECT src/app.cpp src/title_main.cpp src/game_import.cpp src/import_dialog.cpp src/graphics_backend.cpp src/fast_clock.cpp src/guest_frame_diagnostics.cpp
+add_library(wos_app OBJECT src/app.cpp src/title_main.cpp src/game_import.cpp src/import_dialog.cpp src/graphics_backend.cpp src/fast_clock.cpp src/guest_frame_diagnostics.cpp src/wait_trace.cpp src/wait_trace_runtime.cpp
   "${REXGLUE_SRC}/src/ui/rex_app.cpp")
 set_source_files_properties(src/graphics_backend.cpp PROPERTIES
   INCLUDE_DIRECTORIES "${REXGLUE_SRC}/thirdparty/glslang;${REXGLUE_SRC}/thirdparty/renderdoc;${REXGLUE_SRC}/thirdparty/vulkan-memory-allocator/include")
@@ -89,6 +89,7 @@ add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/eboot.elf"
     patches/rexglue-texture-descriptor-reuse.patch
     patches/rexglue-command-wait-breakdown.patch
     patches/rexglue-command-ring-wait.patch
+    patches/rexglue-sampled-draw-costs.patch
     dependencies.lock.json LICENSE sce_sys/param.json sce_sys/icon0.png
   COMMAND_EXPAND_LISTS VERBATIM)
 add_custom_target(title DEPENDS "${CMAKE_BINARY_DIR}/eboot.elf")
